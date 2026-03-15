@@ -1,0 +1,19 @@
+# Environments
+.venv/
+env/
+venv/
+
+# AI Models & Heavy Data
+**/factshield_model/
+**/checkpoint-*/
+*.safetensors
+*.bin
+*.h5
+*.faiss
+*.pt
+
+# IDEs and Caches
+.idea/
+__pycache__/
+*.pyc
+.env

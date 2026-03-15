@@ -1,0 +1,14 @@
+[
+  {
+    "claim": "Government is putting GPS chips in new currency notes",
+    "fact": "The Reserve Bank of India confirmed that no such technology exists in currency notes.",
+    "label": "false",
+    "source": "AltNews"
+  },
+  {
+    "claim": "Drinking hot water cures COVID-19",
+    "fact": "WHO states there is no evidence that hot water cures COVID-19.",
+    "label": "false",
+    "source": "BoomLive"
+  }
+]
