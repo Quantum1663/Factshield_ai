@@ -15,7 +15,7 @@ DATA_DIR = BASE_DIR / "data"
 # We can read directly from our clean_dataset.json now
 DATA_FILE = DATA_DIR / "clean_dataset.json"
 
-MODEL_NAME = "MoritzLaurer/mDeBERTa-v3-base-mnli-xnli"
+MODEL_NAME = "xlm-roberta-base"
 
 print("Loading dataset...")
 
