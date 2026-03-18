@@ -22,9 +22,13 @@ def chunk_text(text, max_words=60, overlap=15):
     return chunks
 
 
-def add_new_evidence(text):
-    if not text:
+def add_new_evidence(article_data):
+    if not article_data or not isinstance(article_data, dict) or not article_data.get("text"):
         return
+
+    text = article_data["text"]
+    source = article_data.get("source", "unknown")
+    date = article_data.get("date")
 
     # Use our new semantic chunking
     chunks = chunk_text(text, max_words=60, overlap=15)
@@ -36,5 +40,11 @@ def add_new_evidence(text):
         # Only embed meaningful chunks
         if len(clean_chunk) > 40:
             embedding = generate_embedding(clean_chunk)
-            add_vector(embedding, clean_chunk)
+            
+            meta = {
+                "text": clean_chunk,
+                "source": source,
+                "date": date
+            }
+            add_vector(embedding, meta)
             print(f"DEBUG: Added chunk to vector DB: {clean_chunk[:50]}...")

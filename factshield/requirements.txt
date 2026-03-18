@@ -20,3 +20,6 @@ lxml_html_clean
 python-dotenv
 emoji
 streamlit
+groq
+tldextract
+cross-encoder

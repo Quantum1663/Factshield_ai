@@ -1,19 +1,20 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-from dotenv import load_dotenv
 import os
-from models.reasoning import generate_reason, fallback_classify
-# Load secure environment variables
-load_dotenv()
+from dotenv import load_dotenv
+from pathlib import Path
 
-from rag.retrieval import retrieve_fact
+# Load environment variables at the absolute start
+BASE_DIR = Path(__file__).resolve().parent
+load_dotenv(BASE_DIR.parent / ".env")
+
+# Core logic imports - MUST stay after load_dotenv
 from models.classifier import classify
-from models.reasoning import generate_reason
+from rag.retrieval import retrieve_fact
 from utils.live_search import search_news
 from utils.web_scraper import scrape_article
 from utils.vector_updater import add_new_evidence
 
-from pathlib import Path
+from fastapi import FastAPI
+from pydantic import BaseModel
 import faiss
 import json
 
@@ -46,21 +47,31 @@ def verify_news(request: NewsRequest):
     evidence = retrieve_fact(text)
 
     # Step 4: THE CASCADE FALLBACK (If the fast model failed, use the LLM)
+    llm_reason = None
     if v_label == "unknown" or v_conf == 0.0 or t_label == "unknown" or t_conf == 0.0:
-        print("DEBUG: Primary model collapsed. Engaging LLM Fallback Classifier...")
-        backup_v_label, backup_t_label = fallback_classify(text, evidence)
+        print("DEBUG: Primary model collapsed. Engaging LLM Fallback Classifier & Reasoner...")
+        from models.reasoning import analyze_claim_with_llm
+        llm_analysis = analyze_claim_with_llm(text, evidence)
 
         # Override the broken labels with the LLM's judgment
         if v_label == "unknown" or v_conf == 0.0:
-            v_label = backup_v_label
+            v_label = llm_analysis.get("veracity", "unknown")
             v_conf = 0.85  # Assign a synthetic high confidence since the LLM verified it
 
         if t_label == "unknown" or t_conf == 0.0:
-            t_label = backup_t_label
+            t_label = llm_analysis.get("toxicity", "unknown")
             t_conf = 0.85
+            
+        llm_reason = llm_analysis.get("reason")
 
     # Step 5: Dynamic Reasoning Engine
-    reason = generate_reason(text, v_label, t_label, evidence)
+    if llm_reason:
+        reason = llm_reason
+    else:
+        # If we didn't use the fallback, generate a reason now using the unified function
+        from models.reasoning import analyze_claim_with_llm
+        llm_analysis = analyze_claim_with_llm(text, evidence)
+        reason = llm_analysis.get("reason", "No explanation could be generated.")
 
     return {
         "claim": text,

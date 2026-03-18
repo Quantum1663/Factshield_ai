@@ -1,77 +1,75 @@
-import torch
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+import os
+import json
+from groq import Groq
 
-model_name = "google/flan-t5-base"
-device = "cuda" if torch.cuda.is_available() else "cpu"
+# Ensure GROQ_API_KEY is loaded in environment
+client = Groq(api_key=os.environ.get("GROQ_API_KEY", "dummy_key_to_prevent_crash_if_not_set"))
 
-print("Loading Reasoning Engine (Flan-T5)...")
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForSeq2SeqLM.from_pretrained(model_name).to(device)
+def analyze_claim_with_llm(claim, evidence_list):
+    """
+    Unified function to perform NLI, fallback classification, and reasoning generation
+    using Llama 3 (via Groq API).
+    """
+    context = "\n".join(evidence_list[:3]) if evidence_list else "No external evidence available."
+    
+    prompt = f"""
+You are an expert fact-checker and content moderator. Analyze the following claim against the provided evidence.
 
+Context Evidence:
+{context}
 
+Claim to Analyze:
+"{claim}"
+
+Perform the following tasks:
+1. Determine if the evidence Supports, Refutes, or is Neutral to the claim (NLI Verdict).
+2. Classify the veracity of the claim as 'real', 'fake', or 'misleading'. If no evidence exists and it's not common knowledge, classify as 'unknown'.
+3. Classify the toxicity of the claim as 'hate' or 'safe'.
+4. Write a concise, one-sentence explanation for your classification based on the NLI verdict and the evidence.
+
+Respond ONLY with a valid JSON object matching this schema:
+{{
+  "verdict": "Supports" | "Refutes" | "Neutral",
+  "veracity": "real" | "fake" | "misleading" | "unknown",
+  "toxicity": "hate" | "safe",
+  "reason": "One sentence explanation..."
+}}
+"""
+    
+    try:
+        completion = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.1,
+            max_tokens=200,
+            response_format={"type": "json_object"}
+        )
+        
+        output = completion.choices[0].message.content
+        res = json.loads(output)
+        
+        # Format the reason to include the NLI verdict for better social impact and explainability
+        nli_verdict = res.get("verdict", "Neutral")
+        base_reason = res.get("reason", "Could not generate an explanation.")
+        final_reason = f"[{nli_verdict.upper()}] {base_reason}"
+        
+        res["reason"] = final_reason
+        return res
+
+    except Exception as e:
+        print(f"DEBUG: Llama API Error - {e}")
+        return {
+            "verdict": "Neutral",
+            "veracity": "unknown",
+            "toxicity": "unknown",
+            "reason": "[ERROR] Failed to analyze claim via Llama API."
+        }
+
+# Keep legacy stubs to avoid breaking imports elsewhere temporarily, though app.py will be updated
 def fallback_classify(claim, evidence_list):
-    """Acts as a backup judge if the primary classifier fails, using strict T5 formatting."""
-    context = " ".join(evidence_list[:2]) if evidence_list else "No evidence available."
-
-    # 1. T5-Optimized Veracity Prompt
-    v_prompt = f"Context: {context}\nClaim: {claim}\nQuestion: Based on the context, is the claim 'real', 'fake', or 'misleading'?\nAnswer:"
-    v_inputs = tokenizer(v_prompt, return_tensors="pt", max_length=512, truncation=True).to(device)
-    v_outputs = model.generate(**v_inputs, max_new_tokens=5, temperature=0.1, do_sample=False)
-    v_pred = tokenizer.decode(v_outputs[0], skip_special_tokens=True).strip().lower()
-
-    # 2. T5-Optimized Toxicity Prompt
-    t_prompt = f"Claim: {claim}\nQuestion: Does this claim contain hate speech, slurs, or threats, or is it a safe observation?\nAnswer:"
-    t_inputs = tokenizer(t_prompt, return_tensors="pt", max_length=512, truncation=True).to(device)
-    t_outputs = model.generate(**t_inputs, max_new_tokens=5, temperature=0.1, do_sample=False)
-    t_pred = tokenizer.decode(t_outputs[0], skip_special_tokens=True).strip().lower()
-
-    # Broadened Synonym Catching
-    v_label = "unknown"
-    if any(word in v_pred for word in ["real", "true", "accurate", "yes"]):
-        v_label = "real"
-    elif any(word in v_pred for word in ["fake", "false", "lie", "no"]):
-        v_label = "fake"
-    elif any(word in v_pred for word in ["mislead", "partial"]):
-        v_label = "misleading"
-
-    t_label = "unknown"
-    if any(word in v_pred for word in ["hate", "toxic", "threat", "slur"]):
-        t_label = "hate"
-    elif any(word in t_pred for word in ["safe", "observation", "no"]):
-        t_label = "safe"
-
-    print(f"DEBUG: LLM Raw Output -> Veracity: '{v_pred}', Toxicity: '{t_pred}'")
-
-    return v_label, t_label
-
+    res = analyze_claim_with_llm(claim, evidence_list)
+    return res.get("veracity", "unknown"), res.get("toxicity", "unknown")
 
 def generate_reason(claim, veracity_label, toxicity_label, evidence_list):
-    if not evidence_list:
-        return f"The system classified this post as '{veracity_label}' and '{toxicity_label}', but could not find specific external evidence to generate a detailed explanation."
-
-    context = " ".join(evidence_list[:2])
-
-    # T5-Optimized Reasoning Prompt
-    prompt = (
-        f"Context: {context}\n"
-        f"Claim: {claim}\n"
-        f"Question: Explain in one short sentence why the claim is {veracity_label}.\n"
-        f"Answer:"
-    )
-
-    inputs = tokenizer(prompt, return_tensors="pt", max_length=512, truncation=True).to(device)
-
-    outputs = model.generate(
-        **inputs,
-        max_new_tokens=60,
-        temperature=0.5,
-        do_sample=True
-    )
-
-    reason = tokenizer.decode(outputs[0], skip_special_tokens=True)
-
-    # Clean up if T5 just repeats the question
-    if reason.lower() == claim.lower() or len(reason) < 10:
-        return f"Based on live retrieved facts, the claim aligns with verified reports found in the database." if veracity_label == 'real' else f"The retrieved evidence contradicts or lacks support for this claim."
-
-    return reason
+    res = analyze_claim_with_llm(claim, evidence_list)
+    return res.get("reason", "No reason generated.")

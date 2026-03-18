@@ -27,24 +27,28 @@ else:
     metadata = []
 
 
-def add_vector(embedding, text):
+def add_vector(embedding, meta):
 
-    if text is None:
+    if meta is None:
         return
 
+    # Extract text to process
+    text = meta if isinstance(meta, str) else meta.get("text", "")
     text = text.strip()
 
     if len(text) < 50:
         return
 
-    if text in metadata:
+    # Backwards compatible duplicate check
+    existing_texts = [m if isinstance(m, str) else m.get("text", "") for m in metadata]
+    if text in existing_texts:
         return
 
     vector = np.array([embedding]).astype("float32")
 
     index.add(vector)
 
-    metadata.append(text)
+    metadata.append(meta)
 
     faiss.write_index(index, str(INDEX_PATH))
 
