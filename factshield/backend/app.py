@@ -119,7 +119,7 @@ def process_full_verification(text):
             "prediction": analysis.get("toxicity", prediction["toxicity"]["label"]),
             "confidence": float(prediction["toxicity"]["confidence"])
         },
-        "propaganda_anatomy": analysis.get("propaganda_anatomy", []),
+        "propaganda_anatomy": analysis.get("propaganda_anatomy", "No manipulation anatomy detected."),
         "generated_reason": analysis.get("reason"),
         "historical_context": analysis.get("historical_context"),
         "evidence": evidence

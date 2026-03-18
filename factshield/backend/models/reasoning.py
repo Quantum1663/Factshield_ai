@@ -25,12 +25,7 @@ Claim to Analyze:
 Perform the following tasks:
 1. NLI Verdict: Determine if the evidence Supports, Refutes, or is Neutral to the claim.
 2. Classification: Veracity ('real', 'fake', 'misleading') and Toxicity ('hate', 'safe').
-3. Propaganda Anatomy: Identify if any of the following manipulation tactics are present:
-   - Whataboutism (diverting the topic)
-   - Fear Mongering (inciting communal fear)
-   - Selective Context (twisting quotes/clips)
-   - Appeal to Emotion (using religious or nationalistic triggers)
-   - Ad Hominem (attacking a historical or political figure's character)
+3. Propaganda Anatomy: Identify if any manipulation tactics (e.g., Whataboutism, Fear Mongering, Selective Context, Appeal to Emotion, Ad Hominem) are present. For the propaganda_anatomy field, you MUST provide a detailed, 2 to 3 sentence paragraph. Do not just list the names of the logical fallacies or emotional manipulations; you must explicitly explain how the specific words in the user's claim execute these manipulations.
 4. Explanation: Provide a concise, one-sentence explanation for the verdict.
 
 Respond ONLY with a valid JSON object matching this schema:
@@ -38,7 +33,7 @@ Respond ONLY with a valid JSON object matching this schema:
   "verdict": "Supports" | "Refutes" | "Neutral",
   "veracity": "real" | "fake" | "misleading" | "unknown",
   "toxicity": "hate" | "safe",
-  "propaganda_anatomy": ["Tactic 1", "Tactic 2"],
+  "propaganda_anatomy": "A detailed 2 to 3 sentence paragraph explaining manipulation tactics and specific execution via the claim's wording.",
   "reason": "One sentence explanation...",
   "historical_context": "If this is a historical claim (e.g. Gandhi ji, Partition), provide a 10-word fact contrast. Else null."
 }}
@@ -68,7 +63,7 @@ Respond ONLY with a valid JSON object matching this schema:
             "verdict": "Neutral",
             "veracity": "unknown",
             "toxicity": "unknown",
-            "propaganda_anatomy": ["Error"],
+            "propaganda_anatomy": "Error: Failed to deconstruct claim anatomy.",
             "reason": "[ERROR] Failed to deconstruct claim.",
             "historical_context": None
         }
