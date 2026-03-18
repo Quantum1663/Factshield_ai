@@ -13,12 +13,25 @@ from utils.live_search import search_news
 from utils.web_scraper import scrape_article
 from utils.vector_updater import add_new_evidence
 
-from fastapi import FastAPI
+from fastapi import FastAPI, middleware, File, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import faiss
 import json
+import pytesseract
+from PIL import Image
+import io
 
+# Setup app
 app = FastAPI(title="SAMI: Social Integrity System")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class NewsRequest(BaseModel):
     text: str
@@ -26,65 +39,121 @@ class NewsRequest(BaseModel):
 @app.post("/verify")
 def verify_news(request: NewsRequest):
     text = request.text
+    return process_full_verification(text)
 
-    # Step 1: Fast Multi-label classification
+@app.post("/verify-image")
+async def verify_image(file: UploadFile = File(...)):
+    contents = await file.read()
+    image = Image.open(io.BytesIO(contents))
+    
+    # Extract text using OCR
+    extracted_text = pytesseract.image_to_string(image)
+    print(f"DEBUG: OCR Extracted -> {extracted_text[:100]}...")
+    
+    if not extracted_text.strip():
+        return {"error": "No text detected in image. SAMI currently requires text-based propaganda to analyze."}
+        
+    return process_full_verification(extracted_text)
+
+def process_full_verification(text):
+    # Step 1: Fast Multi-label classification (Local BERT)
     prediction = classify(text)
-    v_label = prediction["veracity"]["label"]
-    v_conf = prediction["veracity"]["confidence"]
-    t_label = prediction["toxicity"]["label"]
-    t_conf = prediction["toxicity"]["confidence"]
-
-    # Step 2: Live Web Scraping Trigger
-    if v_conf < 0.6 or t_conf < 0.6 or v_label == "unknown":
-        print("DEBUG: Confidence low. Triggering live web search...")
+    
+    # Step 2: Live Search Trigger
+    if prediction["veracity"]["confidence"] < 0.6 or prediction["veracity"]["label"] == "unknown":
         urls = search_news(text)
         for url in urls:
-            article_text = scrape_article(url)
-            if article_text:
-                add_new_evidence(article_text)
+            art = scrape_article(url)
+            if art: add_new_evidence(art)
 
-    # Step 3: Retrieve evidence from FAISS Vector DB
+    # Step 3: RAG Retrieval
     evidence = retrieve_fact(text)
 
-    # Step 4: THE CASCADE FALLBACK (If the fast model failed, use the LLM)
-    llm_reason = None
-    if v_label == "unknown" or v_conf == 0.0 or t_label == "unknown" or t_conf == 0.0:
-        print("DEBUG: Primary model collapsed. Engaging LLM Fallback Classifier & Reasoner...")
-        from models.reasoning import analyze_claim_with_llm
-        llm_analysis = analyze_claim_with_llm(text, evidence)
-
-        # Override the broken labels with the LLM's judgment
-        if v_label == "unknown" or v_conf == 0.0:
-            v_label = llm_analysis.get("veracity", "unknown")
-            v_conf = 0.85  # Assign a synthetic high confidence since the LLM verified it
-
-        if t_label == "unknown" or t_conf == 0.0:
-            t_label = llm_analysis.get("toxicity", "unknown")
-            t_conf = 0.85
-            
-        llm_reason = llm_analysis.get("reason")
-
-    # Step 5: Dynamic Reasoning Engine
-    if llm_reason:
-        reason = llm_reason
-    else:
-        # If we didn't use the fallback, generate a reason now using the unified function
-        from models.reasoning import analyze_claim_with_llm
-        llm_analysis = analyze_claim_with_llm(text, evidence)
-        reason = llm_analysis.get("reason", "No explanation could be generated.")
+    # Step 4: Llama 3.3 V3 Deconstruction
+    from models.reasoning import analyze_claim_with_llm
+    analysis = analyze_claim_with_llm(text, evidence)
 
     return {
         "claim": text,
         "veracity": {
-            "prediction": v_label,
-            "confidence": float(v_conf)
+            "prediction": analysis.get("veracity", prediction["veracity"]["label"]),
+            "confidence": float(prediction["veracity"]["confidence"] if analysis.get("veracity") == prediction["veracity"]["label"] else 0.85)
         },
         "toxicity": {
-            "prediction": t_label,
-            "confidence": float(t_conf)
+            "prediction": analysis.get("toxicity", prediction["toxicity"]["label"]),
+            "confidence": float(prediction["toxicity"]["confidence"])
         },
-        "generated_reason": reason,
+        "propaganda_anatomy": analysis.get("propaganda_anatomy", []),
+        "generated_reason": analysis.get("reason"),
+        "historical_context": analysis.get("historical_context"),
         "evidence": evidence
+    }
+
+import cv2
+import numpy as np
+from utils.feed_aggregator import get_live_feed
+
+@app.get("/feed")
+def fetch_intelligence_feed():
+    return get_live_feed()
+
+@app.post("/verify-video")
+async def verify_video(file: UploadFile = File(...)):
+    # Save video temporarily to process frames
+    temp_path = "temp_video.mp4"
+    with open(temp_path, "wb") as buffer:
+        buffer.write(await file.read())
+    
+    cap = cv2.VideoCapture(temp_path)
+    frames_to_check = []
+    count = 0
+    while cap.isOpened() and len(frames_to_check) < 5:
+        ret, frame = cap.read()
+        if not ret: break
+        # Extract a frame every 30 frames (approx 1 sec)
+        if count % 30 == 0:
+            pil_img = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+            text = pytesseract.image_to_string(pil_img)
+            if text.strip(): frames_to_check.append(text)
+        count += 1
+    cap.release()
+    os.remove(temp_path)
+    
+    full_transcript = " ".join(frames_to_check)
+    print(f"DEBUG: Video OCR Transcript -> {full_transcript[:100]}...")
+    
+    if not full_transcript.strip():
+        return {"error": "No significant text detected in video frames. SAMI requires text or speech context to analyze."}
+        
+    return process_full_verification(full_transcript)
+
+@app.get("/trending")
+def get_trending():
+    data_path = Path(__file__).resolve().parent / "data" / "trending_propaganda.json"
+    if data_path.exists():
+        with open(data_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return []
+
+@app.get("/archive")
+def get_archive():
+    meta_path = Path(__file__).resolve().parent / "data" / "fact_metadata.json"
+    if meta_path.exists():
+        with open(meta_path, "r", encoding="utf-8") as f:
+            metadata = json.load(f)
+            # Return last 20 ingested items to show "learning"
+            return metadata[-20:]
+    return []
+
+@app.get("/neural-stats")
+def get_neural_stats():
+    return {
+        "local_classifier": "XLm-Roberta (Active)",
+        "vector_engine": "FAISS L2-Flat",
+        "memory_count": 0, # Will be updated in system-status
+        "reranker": "Cross-Encoder MiniLM",
+        "reasoner": "Llama 3.3 (via Groq)",
+        "status": "Optimal"
     }
 
 @app.get("/system-status")

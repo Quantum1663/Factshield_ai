@@ -7,13 +7,14 @@ client = Groq(api_key=os.environ.get("GROQ_API_KEY", "dummy_key_to_prevent_crash
 
 def analyze_claim_with_llm(claim, evidence_list):
     """
-    Unified function to perform NLI, fallback classification, and reasoning generation
-    using Llama 3 (via Groq API).
+    V3: Advanced Propaganda Deconstruction Engine.
+    Detects NLI verdicts, veracity, toxicity, and logical fallacies.
     """
     context = "\n".join(evidence_list[:3]) if evidence_list else "No external evidence available."
     
     prompt = f"""
-You are an expert fact-checker and content moderator. Analyze the following claim against the provided evidence.
+You are an expert in information warfare and propaganda deconstruction. 
+Analyze the following claim against the provided evidence, specifically looking for manipulation tactics used in the Indian social media landscape.
 
 Context Evidence:
 {context}
@@ -22,17 +23,24 @@ Claim to Analyze:
 "{claim}"
 
 Perform the following tasks:
-1. Determine if the evidence Supports, Refutes, or is Neutral to the claim (NLI Verdict).
-2. Classify the veracity of the claim as 'real', 'fake', or 'misleading'. If no evidence exists and it's not common knowledge, classify as 'unknown'.
-3. Classify the toxicity of the claim as 'hate' or 'safe'.
-4. Write a concise, one-sentence explanation for your classification based on the NLI verdict and the evidence.
+1. NLI Verdict: Determine if the evidence Supports, Refutes, or is Neutral to the claim.
+2. Classification: Veracity ('real', 'fake', 'misleading') and Toxicity ('hate', 'safe').
+3. Propaganda Anatomy: Identify if any of the following manipulation tactics are present:
+   - Whataboutism (diverting the topic)
+   - Fear Mongering (inciting communal fear)
+   - Selective Context (twisting quotes/clips)
+   - Appeal to Emotion (using religious or nationalistic triggers)
+   - Ad Hominem (attacking a historical or political figure's character)
+4. Explanation: Provide a concise, one-sentence explanation for the verdict.
 
 Respond ONLY with a valid JSON object matching this schema:
 {{
   "verdict": "Supports" | "Refutes" | "Neutral",
   "veracity": "real" | "fake" | "misleading" | "unknown",
   "toxicity": "hate" | "safe",
-  "reason": "One sentence explanation..."
+  "propaganda_anatomy": ["Tactic 1", "Tactic 2"],
+  "reason": "One sentence explanation...",
+  "historical_context": "If this is a historical claim (e.g. Gandhi ji, Partition), provide a 10-word fact contrast. Else null."
 }}
 """
     
@@ -41,19 +49,17 @@ Respond ONLY with a valid JSON object matching this schema:
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.1,
-            max_tokens=200,
+            max_tokens=300,
             response_format={"type": "json_object"}
         )
         
         output = completion.choices[0].message.content
         res = json.loads(output)
         
-        # Format the reason to include the NLI verdict for better social impact and explainability
-        nli_verdict = res.get("verdict", "Neutral")
-        base_reason = res.get("reason", "Could not generate an explanation.")
-        final_reason = f"[{nli_verdict.upper()}] {base_reason}"
+        # Inject NLI verdict into reason for UI impact
+        nli = res.get("verdict", "Neutral")
+        res["reason"] = f"[{nli.upper()}] {res.get('reason')}"
         
-        res["reason"] = final_reason
         return res
 
     except Exception as e:
@@ -62,10 +68,12 @@ Respond ONLY with a valid JSON object matching this schema:
             "verdict": "Neutral",
             "veracity": "unknown",
             "toxicity": "unknown",
-            "reason": "[ERROR] Failed to analyze claim via Llama API."
+            "propaganda_anatomy": ["Error"],
+            "reason": "[ERROR] Failed to deconstruct claim.",
+            "historical_context": None
         }
 
-# Keep legacy stubs to avoid breaking imports elsewhere temporarily, though app.py will be updated
+# Legacy stubs for compatibility
 def fallback_classify(claim, evidence_list):
     res = analyze_claim_with_llm(claim, evidence_list)
     return res.get("veracity", "unknown"), res.get("toxicity", "unknown")
