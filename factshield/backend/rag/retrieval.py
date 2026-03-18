@@ -59,20 +59,29 @@ def retrieve_fact(query, k=3):
         return []
 
     # 2. Extract texts for reranking and maintain mapping to metadata
-    candidate_map = {}
-    candidate_texts = []
-    for cand in candidates:
+    candidate_records = []
+    for idx, cand in enumerate(candidates):
         text = cand.get("text", "") if isinstance(cand, dict) else str(cand)
-        candidate_texts.append(text)
-        candidate_map[text] = cand
+        candidate_records.append({
+            "id": idx,
+            "text": text,
+            "candidate": cand,
+        })
 
     # 3. Use the new rerank_documents function
-    top_texts = rerank_documents(query, candidate_texts, top_k=k)
+    top_texts = rerank_documents(query, [record["text"] for record in candidate_records], top_k=k)
 
     # 4. Format the results with metadata
     formatted_results = []
+    remaining_records = candidate_records.copy()
     for text in top_texts:
-        cand = candidate_map.get(text)
+        match_index = next(
+            (i for i, record in enumerate(remaining_records) if record["text"] == text),
+            None,
+        )
+        if match_index is None:
+            continue
+        cand = remaining_records.pop(match_index)["candidate"]
         if isinstance(cand, dict):
             source = cand.get("source", "unknown source")
             date = cand.get("date", "unknown date")

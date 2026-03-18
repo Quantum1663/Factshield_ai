@@ -1,56 +1,90 @@
 import torch
 import numpy as np
-from captum.attr import LayerIntegratedGradients
+from captum.attr import InputXGradient
 from models.classifier import model, tokenizer, CLASSES, VERACITY_INDICES
 
-def explain_prediction(text):
+VERACITY_LABEL_TO_INDEX = {
+    CLASSES[idx].replace("veracity_", ""): idx for idx in VERACITY_INDICES
+}
+
+
+def _resolve_target_class_index(logits, target_label=None):
+    if target_label:
+        normalized_label = str(target_label).strip().lower()
+        mapped_index = VERACITY_LABEL_TO_INDEX.get(normalized_label)
+        if mapped_index is not None:
+            return mapped_index
+
+    v_logits = logits[VERACITY_INDICES]
+    return VERACITY_INDICES[torch.argmax(v_logits).item()]
+
+
+def _clean_token(token):
+    if token.startswith("##"):
+        return token[2:]
+    if token.startswith("▁") or token.startswith("Ġ"):
+        return token[1:]
+    return token
+
+
+def _token_starts_new_word(token):
+    return token.startswith("▁") or token.startswith("Ġ")
+
+
+def explain_prediction(text, target_label=None):
     """
-    Mechanistic Interpretability for XLm-Roberta.
-    Calculates feature attribution (Integrated Gradients) for the predicted veracity class.
+    Mechanistic Interpretability for Deberta/XLm-Roberta.
+    Uses InputXGradient for signed token attribution.
     Maps subword attributions back to whole words.
     """
+    print(f"DEBUG: Starting XAI Calculation for: {text[:50]}...")
     model.eval()
     
-    # 1. Tokenize and get predicted class
+    # 1. Tokenize
     inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=128)
     input_ids = inputs['input_ids']
     attention_mask = inputs['attention_mask']
+    token_type_ids = inputs.get('token_type_ids')
     
+    # 2. Get Predicted Class
     with torch.no_grad():
-        outputs = model(input_ids, attention_mask=attention_mask)
-        probs = torch.sigmoid(outputs.logits)[0]
-        # Focus on Veracity predicted class
-        v_probs = probs[VERACITY_INDICES]
-        predicted_class_idx = VERACITY_INDICES[torch.argmax(v_probs).item()]
-
-    # 2. Define forward function for Captum
-    # Captum needs a function that takes only the tensors to attribute
-    def forward_func(inputs, attention_mask=None):
-        logits = model(inputs, attention_mask=attention_mask).logits
-        return torch.sigmoid(logits)[:, predicted_class_idx]
-
-    # 3. Setup Layer Integrated Gradients
-    # For XLm-Roberta, we attribute to the word embeddings
-    lig = LayerIntegratedGradients(forward_func, model.roberta.embeddings)
-
-    # 4. Construct baseline (usually all padding tokens)
-    baseline_ids = input_ids.clone().fill_(tokenizer.pad_token_id)
+        outputs = model(input_ids, attention_mask=attention_mask, token_type_ids=token_type_ids)
+        logits = outputs.logits[0]
+        target_class_idx = _resolve_target_class_index(logits, target_label=target_label)
     
-    # 5. Calculate attributions
-    # n_steps=50 is a good balance between accuracy and speed
-    attributions, delta = lig.attribute(
-        inputs=input_ids,
-        baselines=baseline_ids,
-        additional_forward_args=(attention_mask,),
-        return_convergence_delta=True,
-        internal_batch_size=1
+    print(f"DEBUG: Attributing for class index {target_class_idx} (Logits Mode)")
+
+    # 3. Define a wrapper for attribution
+    def model_forward_with_embeddings(embeddings, attention_mask, token_type_ids):
+        logits = model(inputs_embeds=embeddings, 
+                      attention_mask=attention_mask, 
+                      token_type_ids=token_type_ids).logits
+        return logits[:, target_class_idx]
+
+    # Get initial embeddings
+    if hasattr(model, 'roberta'):
+        embeddings_layer = model.roberta.embeddings
+    elif hasattr(model, 'deberta'):
+        embeddings_layer = model.deberta.embeddings
+    else:
+        embeddings_layer = list(model.children())[0].embeddings
+
+    with torch.no_grad():
+        input_embeddings = embeddings_layer(input_ids, token_type_ids=token_type_ids)
+
+    # 4. Use signed attribution so the frontend can distinguish supportive vs opposing words
+    saliency = InputXGradient(model_forward_with_embeddings)
+    input_embeddings.requires_grad = True
+    
+    attributions = saliency.attribute(
+        inputs=input_embeddings,
+        additional_forward_args=(attention_mask, token_type_ids)
     )
 
-    # 6. Process attributions
-    # Sum across the embedding dimension and remove batch/channel dims
+    # 5. Process attributions while preserving direction
     attributions = attributions.sum(dim=-1).squeeze(0).detach().cpu().numpy()
     
-    # 7. Map subwords back to words
+    # 6. Map subword attributions back to words
     tokens = tokenizer.convert_ids_to_tokens(input_ids[0])
     
     word_attributions = []
@@ -58,48 +92,46 @@ def explain_prediction(text):
     current_score = 0.0
     
     for token, score in zip(tokens, attributions):
-        # Skip special tokens
-        if token in [tokenizer.cls_token, tokenizer.sep_token, tokenizer.pad_token]:
-            continue
-            
-        # XLm-Roberta/SentencePiece: ' ' indicates the start of a new word
-        if token.startswith(' '):
-            # Save previous word if exists
-            if current_word is not None:
-                word_attributions.append({
-                    "word": current_word.replace(' ', ''),
-                    "attribution_score": float(current_score)
-                })
-            # Start new word
-            current_word = token
-            current_score = score
-        else:
-            # Continuation of current word
-            if current_word is None: # Should not happen with valid tokenization
-                current_word = token
-                current_score = score
-            else:
-                current_word += token
-                current_score += score
-                
-    # Add the last word
-    if current_word is not None:
-        word_attributions.append({
-            "word": current_word.replace(' ', ''),
-            "attribution_score": float(current_score)
-        })
-        
-    return word_attributions
+        # Clean score
+        clean_score = float(score)
+        if np.isnan(clean_score) or np.isinf(clean_score):
+            clean_score = 0.0
 
-if __name__ == "__main__":
-    # Test if captum is available and functionality
-    try:
-        sample_text = "The government is hiding information about aliens."
-        explanation = explain_prediction(sample_text)
-        print(f"Explanation for: {sample_text}")
-        for item in explanation:
-            print(f"{item['word']}: {item['attribution_score']:.4f}")
-    except ImportError:
-        print("Captum library not found. Please install it with 'pip install captum'")
-    except Exception as e:
-        print(f"Error during explanation: {e}")
+        if token in [tokenizer.cls_token, tokenizer.sep_token, tokenizer.pad_token, '<s>', '</s>', '<pad>']:
+            continue
+
+        clean_token = _clean_token(token)
+        if not clean_token:
+            continue
+
+        if _token_starts_new_word(token):
+            if current_word is not None:
+                final_word = current_word.strip()
+                if final_word:
+                    word_attributions.append({
+                        "word": final_word,
+                        "attribution_score": float(current_score)
+                    })
+            current_word = clean_token
+            current_score = clean_score
+        else:
+            if current_word is None:
+                current_word = clean_token
+                current_score = clean_score
+            elif token.startswith("##"):
+                current_word += clean_token
+                current_score += clean_score
+            else:
+                current_word += clean_token
+                current_score += clean_score
+                
+    if current_word is not None:
+        final_word = current_word.strip()
+        if final_word:
+            word_attributions.append({
+                "word": final_word,
+                "attribution_score": float(current_score)
+            })
+        
+    print(f"DEBUG: XAI Complete. Results: {len(word_attributions)} words.")
+    return word_attributions

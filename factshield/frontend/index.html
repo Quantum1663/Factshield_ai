@@ -165,6 +165,50 @@
             );
         };
 
+        const XAIHeatmap = ({ attributions }) => {
+            if (!attributions || !Array.isArray(attributions) || attributions.length === 0) {
+                return (
+                    <div id="xai-container" className="p-6 bg-slate-950/40 border border-white/5 rounded-3xl text-xs text-slate-500 italic text-center">
+                        Mechanistic interpretability data unavailable for this claim.
+                    </div>
+                );
+            }
+
+            return (
+                <div id="xai-container" className="flex flex-wrap gap-y-2 p-6 bg-slate-950/40 border border-white/5 rounded-3xl leading-relaxed">
+                    {attributions.map((item, i) => {
+                        const score = item.attribution_score || item.score || 0;
+                        const opacity = Math.min(Math.abs(score) * 1.2, 0.9); // Optimized for visibility
+                        
+                        let bgColor = 'transparent';
+                        if (score > 0) {
+                            bgColor = `rgba(255, 50, 50, ${opacity})`; // Red for Fake/Hate
+                        } else if (score < 0) {
+                            bgColor = `rgba(50, 150, 255, ${opacity})`; // Blue for Real/Safe
+                        }
+
+                        return (
+                            <span 
+                                key={i} 
+                                style={{ 
+                                    backgroundColor: bgColor, 
+                                    padding: '2px 4px', 
+                                    borderRadius: '4px', 
+                                    marginRight: '2px', 
+                                    display: 'inline-block',
+                                    color: opacity > 0.4 ? '#fff' : '#cbd5e1'
+                                }}
+                                className="text-sm font-medium transition-all hover:scale-105 cursor-help"
+                                title={`Score: ${score.toFixed(4)}`}
+                            >
+                                {item.word}
+                            </span>
+                        );
+                    })}
+                </div>
+            );
+        };
+
         const Badge = ({ type, text }) => {
             const styles = {
                 real: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
@@ -252,18 +296,20 @@
                         const res = await fetch(`${API_BASE}/task-status/${taskId}`);
                         const data = await res.json();
                         if (data.status === 'completed') {
-                            setResult(data.results);
+                            setResult(data.result);
                             setLoading(false);
                             return true;
                         } else if (data.status === 'failed') {
-                            alert("Analysis failed: " + data.error);
+                            alert("Analysis failed: " + (data.error || "Unknown Error"));
                             setLoading(false);
                             return true;
                         }
                         return false;
                     } catch (e) {
                         console.error("Polling error", e);
-                        return false;
+                        alert("Lost connection while checking task status. Please try again.");
+                        setLoading(false);
+                        return true;
                     }
                 };
 
@@ -283,6 +329,9 @@
                         body: JSON.stringify({ text: textToUse })
                     });
                     const data = await res.json();
+                    if (!res.ok) {
+                        throw new Error(data.detail || data.error || 'Analysis request failed.');
+                    }
                     if (data.task_id) {
                         pollTaskStatus(data.task_id);
                     } else {
@@ -292,7 +341,7 @@
                     const newPoints = points + 25;
                     setPoints(newPoints);
                     localStorage.setItem('truth_points_v4', newPoints);
-                } catch (e) { alert("Backend Unreachable"); setLoading(false); }
+                } catch (e) { alert(e.message || "Backend Unreachable"); setLoading(false); }
             };
 
             const handleMultimodalUpload = async (file, endpoint) => {
@@ -303,17 +352,22 @@
                 try {
                     const res = await fetch(`${API_BASE}${endpoint}`, { method: 'POST', body: formData });
                     const data = await res.json();
-                    if (data.error) {
+                    if (!res.ok) {
+                        alert(data.detail || data.error || "Analysis Service Failed");
+                        setLoading(false);
+                    } else if (data.error) {
                         alert(data.error);
                         setLoading(false);
                     } else if (data.task_id) {
                         pollTaskStatus(data.task_id);
-                        setPoints(points + 50);
-                        localStorage.setItem('truth_points_v4', points + 50);
+                        const newPoints = points + 50;
+                        setPoints(newPoints);
+                        localStorage.setItem('truth_points_v4', newPoints);
                     } else {
                         setResult(data);
-                        setPoints(points + 50);
-                        localStorage.setItem('truth_points_v4', points + 50);
+                        const newPoints = points + 50;
+                        setPoints(newPoints);
+                        localStorage.setItem('truth_points_v4', newPoints);
                         setLoading(false);
                     }
                 } catch (e) { alert("Analysis Service Failed"); setLoading(false); }
@@ -455,11 +509,18 @@
                             <div className="modal-content glass w-full max-w-5xl rounded-[48px] p-12 relative border-cyan-500/30 max-h-[90vh] overflow-y-auto custom-scroll">
                                 <button onClick={() => setResult(null)} className="absolute top-10 right-10 text-slate-500 hover:text-white transition-all text-2xl"><i className="fas fa-times"></i></button>
                                 <div className="flex items-center gap-3 mb-8">
-                                    <div className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border ${result.veracity.prediction === 'real' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border-rose-500/30'}`}>{result.veracity.prediction}</div>
-                                    <Badge type={result.toxicity.prediction} text={`Toxicity: ${result.toxicity.prediction}`} />
+                                    <div className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border ${result.veracity.prediction === 'real' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : result.veracity.prediction === 'unknown' ? 'bg-slate-500/20 text-slate-400 border-slate-500/30' : 'bg-rose-500/20 text-rose-400 border-rose-500/30'}`}>{result.veracity.prediction}</div>
+                                    <Badge type={result.toxicity?.prediction || 'unknown'} text={`Toxicity: ${result.toxicity?.prediction || 'unknown'}`} />
                                     <span className="text-[10px] font-bold text-slate-600 ml-auto uppercase tracking-widest italic">Tactical Intel Protocol v4.2</span>
                                 </div>
                                 <h2 className="text-3xl font-black mb-12 leading-tight text-white italic border-l-8 border-cyan-500 pl-8">"{result.claim}"</h2>
+                                <div className="mb-12">
+                                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-3"><i className="fas fa-eye"></i> Mechanistic Interpretability (XAI)</h4>
+                                    <p className="text-[10px] text-slate-500 italic mb-4">
+                                        Token influence for the displayed veracity label: {result.xai_target_label || result.veracity.prediction}
+                                    </p>
+                                    <XAIHeatmap attributions={result.xai_attributions} />
+                                </div>
                                 <div className="grid grid-cols-2 gap-12">
                                     <div className="flex flex-col gap-8">
                                         <div className="bg-slate-950/50 p-8 rounded-[40px] border border-white/5">
@@ -480,9 +541,9 @@
                                     </div>
                                     <div className="flex flex-col gap-6">
                                         <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-3"><i className="fas fa-link"></i> RAG Neural Evidence Graph</h4>
-                                        <EvidenceGraph claim={result.claim} evidence={result.evidence} />
+                                        <EvidenceGraph claim={result.claim} evidence={result.evidence || []} />
                                         <div className="flex flex-col gap-4 max-h-[200px] overflow-y-auto custom-scroll pr-2">
-                                            {result.evidence.map((ev, i) => {
+                                            {(result.evidence || []).map((ev, i) => {
                                                 const urlRegex = /(https?:\/\/[^\s]+)/g;
                                                 const parts = ev.split(urlRegex);
                                                 const matches = ev.match(urlRegex);

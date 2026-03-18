@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from pathlib import Path
+import sqlite3
 
 # Load environment variables at the absolute start
 BASE_DIR = Path(__file__).resolve().parent
@@ -8,18 +9,19 @@ load_dotenv(BASE_DIR.parent / ".env")
 
 # Core logic imports - MUST stay after load_dotenv
 from models.classifier import classify
+from models.interpretability import explain_prediction
 from rag.retrieval import retrieve_fact
 from utils.live_search import search_news
 from utils.web_scraper import scrape_article
 from utils.vector_updater import add_new_evidence
 
-from fastapi import FastAPI, middleware, File, UploadFile, BackgroundTasks
+from fastapi import FastAPI, File, UploadFile, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import faiss
 import json
 import pytesseract
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 import io
 import tempfile
 import uuid
@@ -32,8 +34,8 @@ except ImportError:
 # Initialize Faster-Whisper
 whisper_model = WhisperModel("base", device="cpu", compute_type="int8")
 
-# In-memory task store
-tasks = {}
+DATA_DIR = BASE_DIR / "data"
+TASK_DB_PATH = DATA_DIR / "tasks.db"
 
 # Setup app
 app = FastAPI(title="SAMI: Social Integrity System")
@@ -49,80 +51,181 @@ app.add_middleware(
 class NewsRequest(BaseModel):
     text: str
 
+
+def init_task_db():
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    with sqlite3.connect(TASK_DB_PATH) as conn:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS tasks (
+                task_id TEXT PRIMARY KEY,
+                status TEXT NOT NULL,
+                result_json TEXT,
+                error TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        conn.commit()
+
+
+def save_task(task_id: str, status: str, result=None, error: str | None = None):
+    result_json = json.dumps(result, ensure_ascii=False) if result is not None else None
+    with sqlite3.connect(TASK_DB_PATH) as conn:
+        conn.execute(
+            """
+            INSERT INTO tasks (task_id, status, result_json, error, updated_at)
+            VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(task_id) DO UPDATE SET
+                status = excluded.status,
+                result_json = excluded.result_json,
+                error = excluded.error,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (task_id, status, result_json, error),
+        )
+        conn.commit()
+
+
+def load_task(task_id: str):
+    with sqlite3.connect(TASK_DB_PATH) as conn:
+        row = conn.execute(
+            "SELECT status, result_json, error FROM tasks WHERE task_id = ?",
+            (task_id,),
+        ).fetchone()
+
+    if row is None:
+        return None
+
+    status, result_json, error = row
+    payload = {"status": status}
+    if result_json:
+        payload["result"] = json.loads(result_json)
+    if error:
+        payload["error"] = error
+    return payload
+
+
+def validate_uploaded_file(file: UploadFile, expected_prefix: str):
+    if not file.content_type or not file.content_type.startswith(expected_prefix):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported upload type. Expected a file with content type starting with '{expected_prefix}'.",
+        )
+
+
+def resolve_label_and_confidence(base_prediction: dict, analysis_label):
+    base_label = base_prediction["label"]
+    resolved_label = analysis_label or base_label
+    resolved_confidence = float(base_prediction["confidence"]) if resolved_label == base_label else None
+    return resolved_label, resolved_confidence
+
+
+init_task_db()
+
 def run_verification_task(task_id: str, text: str):
     """Background worker to run the heavy ML pipeline."""
+    print(f"--- STARTING TASK {task_id} ---")
     try:
-        tasks[task_id] = {"status": "processing"}
-        results = process_full_verification(text)
-        tasks[task_id] = {
-            "status": "completed",
-            "results": results
-        }
+        save_task(task_id, "processing")
+        print(f"DEBUG: Processing verification for task {task_id}...")
+        data = process_full_verification(text)
+        print(f"DEBUG: Verification complete for task {task_id}. Updating status to completed.")
+        save_task(task_id, "completed", result=data)
     except Exception as e:
-        print(f"Error in background task {task_id}: {str(e)}")
-        tasks[task_id] = {"status": "failed", "error": str(e)}
+        import traceback
+        error_msg = traceback.format_exc()
+        print(f"!!! ERROR in background task {task_id} !!!")
+        print(error_msg)
+        save_task(task_id, "failed", error=str(e))
+    print(f"--- FINISHED TASK {task_id} ---")
 
 @app.post("/verify")
 async def verify_news(request: NewsRequest, background_tasks: BackgroundTasks):
     task_id = str(uuid.uuid4())
-    tasks[task_id] = {"status": "pending"}
+    save_task(task_id, "pending")
     background_tasks.add_task(run_verification_task, task_id, request.text)
     return {"task_id": task_id, "status": "processing"}
 
 @app.post("/verify-image")
-async def verify_image(file: UploadFile = File(...), background_tasks: BackgroundTasks = None):
+async def verify_image(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
+    validate_uploaded_file(file, "image/")
     contents = await file.read()
-    image = Image.open(io.BytesIO(contents))
+    try:
+        image = Image.open(io.BytesIO(contents))
+    except UnidentifiedImageError as exc:
+        raise HTTPException(status_code=400, detail="Uploaded file is not a valid image.") from exc
     
     # OCR is relatively fast, but let's keep it in the main flow to get the text
     extracted_text = pytesseract.image_to_string(image).strip()
     
     if not extracted_text:
-        return {"error": "No text detected in image."}
+        raise HTTPException(status_code=400, detail="No text detected in image.")
         
     task_id = str(uuid.uuid4())
-    tasks[task_id] = {"status": "pending"}
+    save_task(task_id, "pending")
     background_tasks.add_task(run_verification_task, task_id, extracted_text)
     return {"task_id": task_id, "status": "processing"}
 
 @app.get("/task-status/{task_id}")
 async def get_task_status(task_id: str):
-    if task_id not in tasks:
-        return {"error": "Task not found"}
-    return tasks[task_id]
+    task = load_task(task_id)
+    if task is None:
+        return {"status": "failed", "error": "Task not found"}
+    return task
 
 def process_full_verification(text):
-    # Step 1: Fast Multi-label classification (Local BERT)
+    print(f"DEBUG: [Step 1] Classifying text...")
     prediction = classify(text)
     
-    # Step 2: Live Search Trigger
+    print(f"DEBUG: [Step 2] Search check...")
     if prediction["veracity"]["confidence"] < 0.6 or prediction["veracity"]["label"] == "unknown":
+        print(f"DEBUG: Low confidence, triggering live search...")
         urls = search_news(text)
         for url in urls:
             art = scrape_article(url)
-            if art: add_new_evidence(art)
+            if art: 
+                print(f"DEBUG: Adding new evidence from {url}")
+                add_new_evidence(art)
 
-    # Step 3: RAG Retrieval
+    print(f"DEBUG: [Step 3] RAG Retrieval...")
     evidence = retrieve_fact(text)
 
-    # Step 4: Llama 3.3 V3 Deconstruction
+    print(f"DEBUG: [Step 4] LLM Analysis...")
     from models.reasoning import analyze_claim_with_llm
     analysis = analyze_claim_with_llm(text, evidence)
 
+    veracity_label, veracity_confidence = resolve_label_and_confidence(
+        prediction["veracity"], analysis.get("veracity")
+    )
+    toxicity_label, toxicity_confidence = resolve_label_and_confidence(
+        prediction["toxicity"], analysis.get("toxicity")
+    )
+
+    print(f"DEBUG: [Step 5] XAI Generation...")
+    try:
+        xai_attributions = explain_prediction(text, target_label=veracity_label)
+    except Exception as e:
+        print(f"DEBUG: XAI Calculation Failed: {e}")
+        xai_attributions = []
+
+    print(f"DEBUG: Verification steps complete.")
     return {
         "claim": text,
         "veracity": {
-            "prediction": analysis.get("veracity", prediction["veracity"]["label"]),
-            "confidence": float(prediction["veracity"]["confidence"] if analysis.get("veracity") == prediction["veracity"]["label"] else 0.85)
+            "prediction": veracity_label,
+            "confidence": veracity_confidence
         },
         "toxicity": {
-            "prediction": analysis.get("toxicity", prediction["toxicity"]["label"]),
-            "confidence": float(prediction["toxicity"]["confidence"])
+            "prediction": toxicity_label,
+            "confidence": toxicity_confidence
         },
         "propaganda_anatomy": analysis.get("propaganda_anatomy", "No manipulation anatomy detected."),
         "generated_reason": analysis.get("reason"),
         "historical_context": analysis.get("historical_context"),
-        "evidence": evidence
+        "evidence": evidence,
+        "xai_attributions": xai_attributions,
+        "xai_target_label": veracity_label
     }
 
 import cv2
@@ -134,7 +237,8 @@ def fetch_intelligence_feed():
     return get_live_feed()
 
 @app.post("/verify-video")
-async def verify_video(file: UploadFile = File(...), background_tasks: BackgroundTasks = None):
+async def verify_video(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
+    validate_uploaded_file(file, "video/")
     # Create temporary file for video
     with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as temp_video:
         temp_video.write(await file.read())
@@ -187,13 +291,13 @@ async def verify_video(file: UploadFile = File(...), background_tasks: Backgroun
 
         # --- Step 4: Background Task handoff ---
         task_id = str(uuid.uuid4())
-        tasks[task_id] = {"status": "pending"}
+        save_task(task_id, "pending")
         background_tasks.add_task(run_verification_task, task_id, full_context)
         return {"task_id": task_id, "status": "processing"}
 
     except Exception as e:
         print(f"ERROR in /verify-video: {str(e)}")
-        return {"error": f"Video processing failed: {str(e)}"}
+        raise HTTPException(status_code=400, detail=f"Video processing failed: {str(e)}") from e
 
     finally:
         # Cleanup temporary files
