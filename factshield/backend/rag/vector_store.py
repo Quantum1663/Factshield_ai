@@ -45,6 +45,11 @@ def add_vector(embedding, meta):
         return
 
     vector = np.array([embedding]).astype("float32")
+    if vector.ndim == 1:
+        vector = np.expand_dims(vector, axis=0)
+    
+    # Normalize for Cosine Similarity via IndexFlatL2
+    faiss.normalize_L2(vector)
 
     index.add(vector)
 
@@ -62,6 +67,11 @@ def search(embedding, k=5):
     """
 
     vector = np.array([embedding]).astype("float32")
+    if vector.ndim == 1:
+        vector = np.expand_dims(vector, axis=0)
+    
+    # Normalize for consistent search against the normalized index
+    faiss.normalize_L2(vector)
 
     distances, indices = index.search(vector, k)
 
