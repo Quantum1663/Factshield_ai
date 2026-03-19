@@ -2,6 +2,12 @@ import os
 from dotenv import load_dotenv
 from pathlib import Path
 import sqlite3
+import shutil
+import logging
+
+# Configure Logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Load environment variables at the absolute start
 BASE_DIR = Path(__file__).resolve().parent
@@ -26,13 +32,25 @@ import io
 import tempfile
 import uuid
 from faster_whisper import WhisperModel
+
+# --- Dependency Verification ---
+TESSERACT_AVAILABLE = shutil.which("tesseract") is not None
+if not TESSERACT_AVAILABLE:
+    logger.warning("Tesseract OCR not found in system PATH. Image/Video OCR will fail.")
+
 try:
     from moviepy import VideoFileClip
 except ImportError:
-    from moviepy.editor import VideoFileClip
+    try:
+        from moviepy.editor import VideoFileClip
+    except ImportError:
+        logger.warning("MoviePy not found. Video verification will be disabled.")
+        VideoFileClip = None
 
-# Initialize Faster-Whisper
-whisper_model = WhisperModel("base", device="cpu", compute_type="int8")
+# --- Configuration ---
+WHISPER_DEVICE = os.getenv("WHISPER_DEVICE", "cpu")
+WHISPER_COMPUTE_TYPE = os.getenv("WHISPER_COMPUTE_TYPE", "int8")
+whisper_model = WhisperModel("base", device=WHISPER_DEVICE, compute_type=WHISPER_COMPUTE_TYPE)
 
 DATA_DIR = BASE_DIR / "data"
 TASK_DB_PATH = DATA_DIR / "tasks.db"
@@ -125,20 +143,17 @@ init_task_db()
 
 def run_verification_task(task_id: str, text: str):
     """Background worker to run the heavy ML pipeline."""
-    print(f"--- STARTING TASK {task_id} ---")
+    logger.info(f"--- STARTING TASK {task_id} ---")
     try:
         save_task(task_id, "processing")
-        print(f"DEBUG: Processing verification for task {task_id}...")
         data = process_full_verification(text)
-        print(f"DEBUG: Verification complete for task {task_id}. Updating status to completed.")
         save_task(task_id, "completed", result=data)
     except Exception as e:
         import traceback
         error_msg = traceback.format_exc()
-        print(f"!!! ERROR in background task {task_id} !!!")
-        print(error_msg)
+        logger.error(f"!!! ERROR in background task {task_id} !!!\n{error_msg}")
         save_task(task_id, "failed", error=str(e))
-    print(f"--- FINISHED TASK {task_id} ---")
+    logger.info(f"--- FINISHED TASK {task_id} ---")
 
 @app.post("/verify")
 async def verify_news(request: NewsRequest, background_tasks: BackgroundTasks):
@@ -149,6 +164,9 @@ async def verify_news(request: NewsRequest, background_tasks: BackgroundTasks):
 
 @app.post("/verify-image")
 async def verify_image(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
+    if not TESSERACT_AVAILABLE:
+        raise HTTPException(status_code=503, detail="OCR Engine (Tesseract) is not installed on this server.")
+
     validate_uploaded_file(file, "image/")
     contents = await file.read()
     try:
@@ -156,9 +174,12 @@ async def verify_image(background_tasks: BackgroundTasks, file: UploadFile = Fil
     except UnidentifiedImageError as exc:
         raise HTTPException(status_code=400, detail="Uploaded file is not a valid image.") from exc
     
-    # OCR is relatively fast, but let's keep it in the main flow to get the text
-    extracted_text = pytesseract.image_to_string(image).strip()
-    
+    try:
+        extracted_text = pytesseract.image_to_string(image).strip()
+    except Exception as e:
+        logger.error(f"OCR Failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to extract text from image.")
+
     if not extracted_text:
         raise HTTPException(status_code=400, detail="No text detected in image.")
         
@@ -175,23 +196,23 @@ async def get_task_status(task_id: str):
     return task
 
 def process_full_verification(text):
-    print(f"DEBUG: [Step 1] Classifying text...")
+    logger.info(f"Step 1: Classifying text...")
     prediction = classify(text)
     
-    print(f"DEBUG: [Step 2] Search check...")
+    logger.info(f"Step 2: Search check...")
     if prediction["veracity"]["confidence"] < 0.6 or prediction["veracity"]["label"] == "unknown":
-        print(f"DEBUG: Low confidence, triggering live search...")
+        logger.info(f"Low confidence, triggering live search...")
         urls = search_news(text)
         for url in urls:
             art = scrape_article(url)
             if art: 
-                print(f"DEBUG: Adding new evidence from {url}")
+                logger.info(f"Adding new evidence from {url}")
                 add_new_evidence(art)
 
-    print(f"DEBUG: [Step 3] RAG Retrieval...")
+    logger.info(f"Step 3: RAG Retrieval...")
     evidence = retrieve_fact(text)
 
-    print(f"DEBUG: [Step 4] LLM Analysis...")
+    logger.info(f"Step 4: LLM Analysis...")
     from models.reasoning import analyze_claim_with_llm
     analysis = analyze_claim_with_llm(text, evidence)
 
@@ -202,14 +223,13 @@ def process_full_verification(text):
         prediction["toxicity"], analysis.get("toxicity")
     )
 
-    print(f"DEBUG: [Step 5] XAI Generation...")
+    logger.info(f"Step 5: XAI Generation...")
     try:
         xai_attributions = explain_prediction(text, target_label=veracity_label)
     except Exception as e:
-        print(f"DEBUG: XAI Calculation Failed: {e}")
+        logger.error(f"XAI Calculation Failed: {e}")
         xai_attributions = []
 
-    print(f"DEBUG: Verification steps complete.")
     return {
         "claim": text,
         "veracity": {
@@ -238,15 +258,25 @@ def fetch_intelligence_feed():
 
 @app.post("/verify-video")
 async def verify_video(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
+    if VideoFileClip is None:
+        raise HTTPException(status_code=503, detail="Video processing library (MoviePy) is missing on this server.")
+    if not TESSERACT_AVAILABLE:
+        raise HTTPException(status_code=503, detail="OCR Engine (Tesseract) is not installed on this server.")
+
     validate_uploaded_file(file, "video/")
+    
     # Create temporary file for video
-    with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as temp_video:
-        temp_video.write(await file.read())
-        video_path = temp_video.name
+    temp_dir = Path(tempfile.gettempdir())
+    video_filename = f"{uuid.uuid4()}.mp4"
+    video_path = temp_dir / video_filename
+    audio_path = temp_dir / video_filename.with_suffix(".mp3").name
 
     try:
+        with open(video_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
         # --- Step 1: Video OCR Extraction ---
-        cap = cv2.VideoCapture(video_path)
+        cap = cv2.VideoCapture(str(video_path))
         ocr_texts = []
         count = 0
         while cap.isOpened() and len(ocr_texts) < 10:
@@ -263,28 +293,23 @@ async def verify_video(background_tasks: BackgroundTasks, file: UploadFile = Fil
         ocr_context = " ".join(ocr_texts)
 
         # --- Step 2: Audio Extraction and Transcription ---
-        audio_path = video_path.replace(".mp4", ".mp3")
-        video_clip = VideoFileClip(video_path)
+        video_clip = VideoFileClip(str(video_path))
         
         spoken_transcript = ""
-        if video_clip.audio is not None:
-            print("DEBUG: Extracting audio for transcription...")
-            video_clip.audio.write_audiofile(audio_path, logger=None)
+        if video_clip and video_clip.audio is not None:
+            logger.info("Extracting audio for transcription...")
+            video_clip.audio.write_audiofile(str(audio_path), logger=None)
             
             # Transcribe using Faster-Whisper
-            segments, info = whisper_model.transcribe(audio_path, beam_size=5)
+            segments, info = whisper_model.transcribe(str(audio_path), beam_size=5)
             spoken_transcript = " ".join([segment.text for segment in segments]).strip()
-            
-            # Cleanup audio file immediately
-            if os.path.exists(audio_path):
-                os.remove(audio_path)
         
-        video_clip.close()
+        if video_clip:
+            video_clip.close()
 
         # --- Step 3: Multimodal Context Combination ---
         full_context = f"{ocr_context} {spoken_transcript}".strip()
-        print(f"DEBUG: OCR Context -> {ocr_context[:100]}...")
-        print(f"DEBUG: Spoken Context -> {spoken_transcript[:100]}...")
+        logger.info(f"Context captured. Length: {len(full_context)} chars")
 
         if not full_context:
             return {"error": "No text or speech detected in video. SAMI requires context to analyze."}
@@ -296,20 +321,19 @@ async def verify_video(background_tasks: BackgroundTasks, file: UploadFile = Fil
         return {"task_id": task_id, "status": "processing"}
 
     except Exception as e:
-        print(f"ERROR in /verify-video: {str(e)}")
-        raise HTTPException(status_code=400, detail=f"Video processing failed: {str(e)}") from e
+        logger.error(f"ERROR in /verify-video: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Video processing failed: {str(e)}") from e
 
     finally:
         # Cleanup temporary files
-        if os.path.exists(video_path):
-            os.remove(video_path)
-        audio_path = video_path.replace(".mp4", ".mp3")
-        if os.path.exists(audio_path):
-            os.remove(audio_path)
+        if video_path.exists():
+            video_path.unlink()
+        if audio_path.exists():
+            audio_path.unlink()
 
 @app.get("/trending")
 def get_trending():
-    data_path = Path(__file__).resolve().parent / "data" / "trending_propaganda.json"
+    data_path = DATA_DIR / "trending_propaganda.json"
     if data_path.exists():
         with open(data_path, "r", encoding="utf-8") as f:
             return json.load(f)
@@ -317,11 +341,10 @@ def get_trending():
 
 @app.get("/archive")
 def get_archive():
-    meta_path = Path(__file__).resolve().parent / "data" / "fact_metadata.json"
+    meta_path = DATA_DIR / "fact_metadata.json"
     if meta_path.exists():
         with open(meta_path, "r", encoding="utf-8") as f:
             metadata = json.load(f)
-            # Return last 20 ingested items to show "learning"
             return metadata[-20:]
     return []
 
@@ -330,7 +353,7 @@ def get_neural_stats():
     return {
         "local_classifier": "XLm-Roberta (Active)",
         "vector_engine": "FAISS L2-Flat",
-        "memory_count": 0, # Will be updated in system-status
+        "memory_count": 0,
         "reranker": "Cross-Encoder MiniLM",
         "reasoner": "Llama 3.3 (via Groq)",
         "status": "Optimal"
@@ -338,11 +361,8 @@ def get_neural_stats():
 
 @app.get("/system-status")
 def system_status():
-    base_dir = Path(__file__).resolve().parent
-    data_dir = base_dir / "data"
-
-    index_path = data_dir / "fact_index.faiss"
-    meta_path = data_dir / "fact_metadata.json"
+    index_path = DATA_DIR / "fact_index.faiss"
+    meta_path = DATA_DIR / "fact_metadata.json"
 
     dataset_size = 0
     index_size = 0

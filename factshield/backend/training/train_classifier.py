@@ -1,118 +1,175 @@
 import json
-import torch
+import math
+import inspect
 from pathlib import Path
+
+import numpy as np
+import torch
 from datasets import Dataset
 from transformers import (
-    AutoTokenizer,
     AutoModelForSequenceClassification,
+    AutoTokenizer,
+    DataCollatorWithPadding,
+    Trainer,
+    TrainerCallback,
     TrainingArguments,
-    Trainer
+    set_seed,
 )
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
-
-# We can read directly from our clean_dataset.json now
 DATA_FILE = DATA_DIR / "clean_dataset.json"
-
+MODEL_DIR = BASE_DIR / "factshield_model"
 MODEL_NAME = "xlm-roberta-base"
+MAX_LENGTH = 128
+SEED = 42
 
-print("Loading dataset...")
-
-with open(DATA_FILE, "r", encoding="utf-8") as f:
-    samples = json.load(f)
-
-print(f"Loaded {len(samples)} samples")
-
-# --- ADD THIS NEW DATA SANITIZATION BLOCK ---
-for item in samples:
-    # 1. Convert old 'claim' keys to new 'text' keys
-    if "claim" in item and "text" not in item:
-        item["text"] = item.pop("claim")
-    elif "text" not in item:
-        item["text"] = ""
-
-    # 2. Convert old 'label' keys to 'veracity_label'
-    if "label" in item and "veracity_label" not in item:
-        item["veracity_label"] = item.pop("label")
-
-    # 3. Ensure 'toxicity_label' exists for old data
-    if "toxicity_label" not in item:
-        item["toxicity_label"] = "unknown"
-# --------------------------------------------
-
-dataset = Dataset.from_list(samples)
-
-# Define our new multi-label space (7 distinct classes)
 CLASSES = [
     "real", "fake", "misleading", "veracity_unknown",
-    "hate", "safe", "toxicity_unknown"
+    "hate", "safe", "toxicity_unknown",
 ]
 
 
+class StopOnNonFiniteLoss(TrainerCallback):
+    """Abort training as soon as loss becomes NaN/Inf so we do not save a poisoned checkpoint."""
+
+    def on_log(self, args, state, control, logs=None, **kwargs):
+        if not logs:
+            return control
+        loss = logs.get("loss")
+        if loss is not None and not math.isfinite(loss):
+            raise RuntimeError(f"Training loss became non-finite: {loss}")
+        grad_norm = logs.get("grad_norm")
+        if grad_norm is not None and not math.isfinite(grad_norm):
+            raise RuntimeError(f"Gradient norm became non-finite: {grad_norm}")
+        return control
+
+
+def sanitize_sample(item):
+    item = dict(item)
+
+    if "claim" in item and "text" not in item:
+        item["text"] = item.pop("claim")
+    item["text"] = str(item.get("text", "") or "").strip()
+
+    if "label" in item and "veracity_label" not in item:
+        item["veracity_label"] = item.pop("label")
+
+    item["veracity_label"] = str(item.get("veracity_label", "unknown") or "unknown").strip().lower()
+    item["toxicity_label"] = str(item.get("toxicity_label", "unknown") or "unknown").strip().lower()
+
+    if item["veracity_label"] == "unknown":
+        item["veracity_label"] = "veracity_unknown"
+    if item["toxicity_label"] == "unknown":
+        item["toxicity_label"] = "toxicity_unknown"
+
+    return item
+
+
 def encode_labels(example):
-    # Initialize an array of 0.0s
     labels = [0.0] * len(CLASSES)
 
-    # Map veracity
-    v_label = example.get("veracity_label", "unknown")
-    if v_label == "unknown": v_label = "veracity_unknown"
+    v_label = example["veracity_label"]
     if v_label in CLASSES:
         labels[CLASSES.index(v_label)] = 1.0
 
-    # Map toxicity
-    t_label = example.get("toxicity_label", "unknown")
-    if t_label == "unknown": t_label = "toxicity_unknown"
+    t_label = example["toxicity_label"]
     if t_label in CLASSES:
         labels[CLASSES.index(t_label)] = 1.0
 
-    return {"labels": labels}  # HuggingFace expects the key to be exactly "labels"
-
-
-dataset = dataset.map(encode_labels)
-
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+    return {"labels": labels}
 
 
 def tokenize(example):
     return tokenizer(
         example["text"],
         truncation=True,
-        padding="max_length",
-        max_length=128
+        max_length=MAX_LENGTH,
     )
 
 
+def pick_precision_mode():
+    if not torch.cuda.is_available():
+        return {"fp16": False, "bf16": False}
+
+    if torch.cuda.is_bf16_supported():
+        return {"fp16": False, "bf16": True}
+
+    return {"fp16": True, "bf16": False}
+
+
+set_seed(SEED)
+
+print("Loading dataset...")
+with open(DATA_FILE, "r", encoding="utf-8") as f:
+    raw_samples = json.load(f)
+
+samples = [sanitize_sample(item) for item in raw_samples]
+samples = [item for item in samples if item["text"]]
+print(f"Loaded {len(samples)} usable samples")
+
+dataset = Dataset.from_list(samples)
+dataset = dataset.map(encode_labels)
+
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 dataset = dataset.map(tokenize, batched=True)
 
-# Define the model as a multi-label classifier
+dataset = dataset.remove_columns(
+    [col for col in dataset.column_names if col not in {"input_ids", "attention_mask", "labels"}]
+)
+dataset.set_format(type="torch")
+
+print(f"CUDA available: {torch.cuda.is_available()}")
+if torch.cuda.is_available():
+    print(f"GPU: {torch.cuda.get_device_name(0)}")
+
+precision = pick_precision_mode()
+print(f"Precision mode -> fp16={precision['fp16']}, bf16={precision['bf16']}")
+
 model = AutoModelForSequenceClassification.from_pretrained(
     MODEL_NAME,
     num_labels=len(CLASSES),
-    problem_type="multi_label_classification",  # THIS is the magic line that switches to Sigmoid/BCE Loss
-    ignore_mismatched_sizes=True
+    problem_type="multi_label_classification",
+    ignore_mismatched_sizes=True,
 )
 
 training_args = TrainingArguments(
-    output_dir="../factshield_model",
-    learning_rate=2e-5,
-    per_device_train_batch_size=8,
-    num_train_epochs=2,
-    logging_steps=50,
-    save_steps=500,
-    bf16=True  # Use mixed precision if you have a GPU
+    **{
+        key: value
+        for key, value in {
+            "output_dir": str(MODEL_DIR),
+            "overwrite_output_dir": True,
+            "learning_rate": 2e-5,
+            "per_device_train_batch_size": 8,
+            "num_train_epochs": 2,
+            "logging_strategy": "steps",
+            "logging_steps": 50,
+            "save_strategy": "steps",
+            "save_steps": 500,
+            "save_total_limit": 2,
+            "max_grad_norm": 1.0,
+            "dataloader_pin_memory": torch.cuda.is_available(),
+            "report_to": "none",
+            "fp16": precision["fp16"],
+            "bf16": precision["bf16"],
+        }.items()
+        if key in inspect.signature(TrainingArguments.__init__).parameters
+    }
 )
 
 trainer = Trainer(
     model=model,
     args=training_args,
-    train_dataset=dataset
+    train_dataset=dataset,
+    data_collator=DataCollatorWithPadding(tokenizer=tokenizer, padding="longest"),
+    callbacks=[StopOnNonFiniteLoss()],
 )
 
-print("Starting Multi-Label training...")
+print("Starting multi-label training...")
 trainer.train()
 
-trainer.save_model("./factshield_model")
-tokenizer.save_pretrained("./factshield_model")
+print("Saving stable model artifacts...")
+trainer.save_model(str(MODEL_DIR))
+tokenizer.save_pretrained(str(MODEL_DIR))
 
-print("Model training complete. SAMI Multi-Label Model saved.")
+print(f"Model training complete. Saved to {MODEL_DIR}")

@@ -9,12 +9,20 @@ import math
 # Go up TWO levels: from models -> to backend
 BASE_DIR = Path(__file__).resolve().parent.parent
 MODEL_PATH = BASE_DIR / "factshield_model"
+DEVICE = torch.device("cpu")
 
 print(f"Looking for model at: {MODEL_PATH}")
 
 try:
     tokenizer = AutoTokenizer.from_pretrained(str(MODEL_PATH))
     model = AutoModelForSequenceClassification.from_pretrained(str(MODEL_PATH))
+    # The saved checkpoint advertises float16, which can yield NaNs on CPU inference.
+    # Force float32 weights for stable local predictions and XAI on non-GPU setups.
+    model = model.to(DEVICE)
+    model = model.float()
+    if hasattr(model, "config"):
+        model.config.torch_dtype = torch.float32
+    model.eval()
 except Exception as e:
     print(f"Error: {e}")
     print(f"\nWarning: Could not load model from {MODEL_PATH}.")
@@ -33,12 +41,14 @@ TOXICITY_INDICES = [4, 5, 6]
 
 def classify(text):
     inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=128)
+    inputs = {key: value.to(DEVICE) for key, value in inputs.items()}
 
     with torch.no_grad():
         outputs = model(**inputs)
+        logits = torch.nan_to_num(outputs.logits, nan=0.0, posinf=0.0, neginf=0.0)
 
     # Use Sigmoid instead of Softmax for multi-label!
-    probs = torch.sigmoid(outputs.logits)[0]
+    probs = torch.sigmoid(logits)[0]
 
     # Extract Veracity Prediction
     veracity_probs = probs[VERACITY_INDICES]

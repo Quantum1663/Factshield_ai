@@ -1,5 +1,8 @@
-// Fetch trending propaganda on load
-const API_BASE = 'http://127.0.0.1:8000';
+// Detect API Base URL: Use current origin if served from the same server, 
+// otherwise default to localhost:8000
+const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
+    ? 'http://127.0.0.1:8000' 
+    : window.location.origin.replace(window.location.port, '8000'); // Heuristic for paired dev ports
 
 async function fetchTrending() {
     const feedContainer = document.querySelector('.feed-items');
