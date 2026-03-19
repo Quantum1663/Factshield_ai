@@ -29,3 +29,5 @@ numpy
 faster-whisper
 moviepy
 captum
+pytest
+httpx

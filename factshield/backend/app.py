@@ -1,4 +1,7 @@
 import os
+import time
+import hashlib
+from collections import OrderedDict
 from dotenv import load_dotenv
 from pathlib import Path
 import sqlite3
@@ -8,6 +11,57 @@ import logging
 # Configure Logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+# --- In-memory LRU cache for verification results ---
+class ResultCache:
+    def __init__(self, max_size=100, ttl_seconds=600):
+        self._cache = OrderedDict()
+        self._max_size = max_size
+        self._ttl = ttl_seconds
+
+    def _key(self, text):
+        return hashlib.sha256(text.strip().lower().encode("utf-8")).hexdigest()
+
+    def get(self, text):
+        k = self._key(text)
+        if k in self._cache:
+            entry = self._cache[k]
+            if time.time() - entry["ts"] < self._ttl:
+                self._cache.move_to_end(k)
+                logger.info("Cache HIT for claim")
+                return entry["data"]
+            del self._cache[k]
+        return None
+
+    def put(self, text, data):
+        k = self._key(text)
+        self._cache[k] = {"data": data, "ts": time.time()}
+        self._cache.move_to_end(k)
+        if len(self._cache) > self._max_size:
+            self._cache.popitem(last=False)
+
+result_cache = ResultCache(max_size=100, ttl_seconds=600)
+
+
+# --- Simple in-memory rate limiter ---
+class RateLimiter:
+    def __init__(self, max_requests=10, window_seconds=60):
+        self._requests = {}
+        self._max = max_requests
+        self._window = window_seconds
+
+    def is_allowed(self, client_ip):
+        now = time.time()
+        if client_ip not in self._requests:
+            self._requests[client_ip] = []
+        self._requests[client_ip] = [t for t in self._requests[client_ip] if now - t < self._window]
+        if len(self._requests[client_ip]) >= self._max:
+            return False
+        self._requests[client_ip].append(now)
+        return True
+
+rate_limiter = RateLimiter(max_requests=15, window_seconds=60)
 
 # Load environment variables at the absolute start
 BASE_DIR = Path(__file__).resolve().parent
@@ -21,7 +75,7 @@ from utils.live_search import search_news
 from utils.web_scraper import scrape_article
 from utils.vector_updater import add_new_evidence
 
-from fastapi import FastAPI, File, UploadFile, BackgroundTasks, HTTPException
+from fastapi import FastAPI, File, UploadFile, BackgroundTasks, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -145,11 +199,18 @@ def resolve_label_and_confidence(base_prediction: dict, analysis_label):
 init_task_db()
 
 def run_verification_task(task_id: str, text: str):
-    """Background worker to run the heavy ML pipeline."""
+    """Background worker to run the heavy ML pipeline with caching."""
     logger.info(f"--- STARTING TASK {task_id} ---")
     try:
+        cached = result_cache.get(text)
+        if cached:
+            save_task(task_id, "completed", result=cached)
+            logger.info(f"--- TASK {task_id} served from cache ---")
+            return
+
         save_task(task_id, "processing")
         data = process_full_verification(text)
+        result_cache.put(text, data)
         save_task(task_id, "completed", result=data)
     except Exception as e:
         import traceback
@@ -159,7 +220,10 @@ def run_verification_task(task_id: str, text: str):
     logger.info(f"--- FINISHED TASK {task_id} ---")
 
 @app.post("/verify")
-async def verify_news(request: NewsRequest, background_tasks: BackgroundTasks):
+async def verify_news(request: NewsRequest, background_tasks: BackgroundTasks, req: Request):
+    client_ip = req.client.host if req.client else "unknown"
+    if not rate_limiter.is_allowed(client_ip):
+        raise HTTPException(status_code=429, detail="Too many requests. Please wait before submitting again.")
     task_id = str(uuid.uuid4())
     save_task(task_id, "pending")
     background_tasks.add_task(run_verification_task, task_id, request.text)
