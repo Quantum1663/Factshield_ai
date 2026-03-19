@@ -1,6 +1,5 @@
 import torch
 import numpy as np
-from captum.attr import InputXGradient
 from models.classifier import model, tokenizer, CLASSES, VERACITY_INDICES
 
 VERACITY_LABEL_TO_INDEX = {
@@ -31,10 +30,53 @@ def _token_starts_new_word(token):
     return token.startswith("▁") or token.startswith("Ġ")
 
 
+def _compute_token_scores(input_ids, attention_mask, token_type_ids, target_class_idx):
+    with torch.no_grad():
+        base_logits = model(
+            input_ids,
+            attention_mask=attention_mask,
+            token_type_ids=token_type_ids,
+        ).logits[0]
+        base_score = float(base_logits[target_class_idx].item())
+
+    scores = []
+    sequence_length = input_ids.shape[1]
+    mask_token_id = tokenizer.mask_token_id or tokenizer.unk_token_id or tokenizer.pad_token_id
+    special_ids = {token_id for token_id in [
+        tokenizer.cls_token_id,
+        tokenizer.sep_token_id,
+        tokenizer.pad_token_id,
+    ] if token_id is not None}
+
+    for token_position in range(sequence_length):
+        token_id = int(input_ids[0, token_position].item())
+        if token_id in special_ids:
+            scores.append(0.0)
+            continue
+
+        perturbed_ids = input_ids.clone()
+        perturbed_ids[0, token_position] = mask_token_id
+
+        with torch.no_grad():
+            perturbed_logits = model(
+                perturbed_ids,
+                attention_mask=attention_mask,
+                token_type_ids=token_type_ids,
+            ).logits[0]
+            perturbed_score = float(perturbed_logits[target_class_idx].item())
+
+        token_score = base_score - perturbed_score
+        if np.isnan(token_score) or np.isinf(token_score):
+            token_score = 0.0
+        scores.append(token_score)
+
+    return scores
+
+
 def explain_prediction(text, target_label=None):
     """
     Mechanistic Interpretability for Deberta/XLm-Roberta.
-    Uses InputXGradient for signed token attribution.
+    Uses token occlusion for stable signed token attribution.
     Maps subword attributions back to whole words.
     """
     print(f"DEBUG: Starting XAI Calculation for: {text[:50]}...")
@@ -54,42 +96,16 @@ def explain_prediction(text, target_label=None):
     
     print(f"DEBUG: Attributing for class index {target_class_idx} (Logits Mode)")
 
-    # 3. Define a wrapper for attribution
-    def model_forward_with_embeddings(embeddings, attention_mask, token_type_ids):
-        logits = model(inputs_embeds=embeddings, 
-                      attention_mask=attention_mask, 
-                      token_type_ids=token_type_ids).logits
-        return logits[:, target_class_idx]
-
-    # Get initial embeddings
-    if hasattr(model, 'roberta'):
-        embeddings_layer = model.roberta.embeddings
-    elif hasattr(model, 'deberta'):
-        embeddings_layer = model.deberta.embeddings
-    else:
-        embeddings_layer = list(model.children())[0].embeddings
-
-    with torch.no_grad():
-        input_embeddings = embeddings_layer(input_ids, token_type_ids=token_type_ids)
-
-    # 4. Use signed attribution so the frontend can distinguish supportive vs opposing words
-    saliency = InputXGradient(model_forward_with_embeddings)
-    input_embeddings.requires_grad = True
+    # 3. Score token importance by how much masking the token changes the target logit
+    attributions = _compute_token_scores(input_ids, attention_mask, token_type_ids, target_class_idx)
     
-    attributions = saliency.attribute(
-        inputs=input_embeddings,
-        additional_forward_args=(attention_mask, token_type_ids)
-    )
-
-    # 5. Process attributions while preserving direction
-    attributions = attributions.sum(dim=-1).squeeze(0).detach().cpu().numpy()
-    
-    # 6. Map subword attributions back to words
+    # 4. Map subword attributions back to words
     tokens = tokenizer.convert_ids_to_tokens(input_ids[0])
     
     word_attributions = []
     current_word = None
     current_score = 0.0
+    force_new_word = False
     
     for token, score in zip(tokens, attributions):
         # Clean score
@@ -100,11 +116,24 @@ def explain_prediction(text, target_label=None):
         if token in [tokenizer.cls_token, tokenizer.sep_token, tokenizer.pad_token, '<s>', '</s>', '<pad>']:
             continue
 
+        if token in {"▁", "Ġ"}:
+            if current_word is not None:
+                final_word = current_word.strip()
+                if final_word:
+                    word_attributions.append({
+                        "word": final_word,
+                        "attribution_score": float(current_score)
+                    })
+            current_word = None
+            current_score = 0.0
+            force_new_word = True
+            continue
+
         clean_token = _clean_token(token)
         if not clean_token:
             continue
 
-        if _token_starts_new_word(token):
+        if force_new_word or _token_starts_new_word(token):
             if current_word is not None:
                 final_word = current_word.strip()
                 if final_word:
@@ -114,6 +143,7 @@ def explain_prediction(text, target_label=None):
                     })
             current_word = clean_token
             current_score = clean_score
+            force_new_word = False
         else:
             if current_word is None:
                 current_word = clean_token

@@ -22,10 +22,10 @@ emoji
 streamlit
 groq
 tldextract
-cross-encoder
 pytesseract
 Pillow
 opencv-python
 numpy
 faster-whisper
 moviepy
+captum

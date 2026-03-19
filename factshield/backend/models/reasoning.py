@@ -2,8 +2,13 @@ import os
 import json
 from groq import Groq
 
-# Ensure GROQ_API_KEY is loaded in environment
-client = Groq(api_key=os.environ.get("GROQ_API_KEY", "dummy_key_to_prevent_crash_if_not_set"))
+
+def get_groq_client():
+    """Build a fresh client so reloads or closed transports do not poison later requests."""
+    api_key = os.environ.get("GROQ_API_KEY")
+    if not api_key:
+        raise RuntimeError("GROQ_API_KEY is not configured.")
+    return Groq(api_key=api_key)
 
 def analyze_claim_with_llm(claim, evidence_list):
     """
@@ -14,6 +19,8 @@ def analyze_claim_with_llm(claim, evidence_list):
     model_name = "llama-3.3-70b-versatile"
 
     try:
+        client = get_groq_client()
+
         # --- AGENT 1: THE PROSECUTOR ---
         prosecutor_prompt = f"""
         You are 'The Prosecutor', an expert in debunking misinformation and identifying information warfare.
