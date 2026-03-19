@@ -3,33 +3,31 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from pathlib import Path
 import sys
 import math
+import logging
 
-# Get the absolute path to the project root (Majorproject_2.0)
-# classifier.py is inside factshield/backend/models/
-# Go up TWO levels: from models -> to backend
+logger = logging.getLogger(__name__)
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 MODEL_PATH = BASE_DIR / "factshield_model"
-DEVICE = torch.device("cpu")
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-print(f"Looking for model at: {MODEL_PATH}")
+logger.info(f"Looking for model at: {MODEL_PATH}")
+logger.info(f"Using device: {DEVICE}")
 
 try:
     tokenizer = AutoTokenizer.from_pretrained(str(MODEL_PATH))
     model = AutoModelForSequenceClassification.from_pretrained(str(MODEL_PATH))
-    # The saved checkpoint advertises float16, which can yield NaNs on CPU inference.
-    # Force float32 weights for stable local predictions and XAI on non-GPU setups.
     model = model.to(DEVICE)
-    model = model.float()
-    if hasattr(model, "config"):
-        model.config.torch_dtype = torch.float32
+    if DEVICE.type == "cpu":
+        model = model.float()
+        if hasattr(model, "config"):
+            model.config.torch_dtype = torch.float32
     model.eval()
 except Exception as e:
-    print(f"Error: {e}")
-    print(f"\nWarning: Could not load model from {MODEL_PATH}.")
-    print("Make sure train_classifier.py completed successfully and the folder exists.")
-    sys.exit(1)  # Stop execution here to prevent the NameError
+    logger.error(f"Could not load model from {MODEL_PATH}: {e}")
+    logger.error("Make sure train_classifier.py completed successfully and the folder exists.")
+    sys.exit(1)
 
-# Must match the training script exactly
 CLASSES = [
     "real", "fake", "misleading", "veracity_unknown",
     "hate", "safe", "toxicity_unknown"
@@ -47,32 +45,26 @@ def classify(text):
         outputs = model(**inputs)
         logits = torch.nan_to_num(outputs.logits, nan=0.0, posinf=0.0, neginf=0.0)
 
-    # Use Sigmoid instead of Softmax for multi-label!
     probs = torch.sigmoid(logits)[0]
 
-    # Extract Veracity Prediction
     veracity_probs = probs[VERACITY_INDICES]
     v_best_idx = torch.argmax(veracity_probs).item()
     v_confidence = float(veracity_probs[v_best_idx].item())
 
-    # SAFETY CHECK: Catch NaN or Infinity
     if math.isnan(v_confidence) or math.isinf(v_confidence):
         v_confidence = 0.0
 
     v_label = CLASSES[VERACITY_INDICES[v_best_idx]]
 
-    # Extract Toxicity Prediction
     toxicity_probs = probs[TOXICITY_INDICES]
     t_best_idx = torch.argmax(toxicity_probs).item()
     t_confidence = float(toxicity_probs[t_best_idx].item())
 
-    # SAFETY CHECK: Catch NaN or Infinity
     if math.isnan(t_confidence) or math.isinf(t_confidence):
         t_confidence = 0.0
 
     t_label = CLASSES[TOXICITY_INDICES[t_best_idx]]
 
-    # Cleanup unknown tags for the API
     if v_label == "veracity_unknown": v_label = "unknown"
     if t_label == "toxicity_unknown": t_label = "unknown"
 
@@ -88,7 +80,6 @@ def classify(text):
     }
 
 
-# Test block
 if __name__ == "__main__":
     test_text = "I hate these people so much, they are secretly putting microchips in our water!"
     print(classify(test_text))

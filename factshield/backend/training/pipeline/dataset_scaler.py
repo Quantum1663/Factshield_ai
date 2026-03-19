@@ -1,7 +1,9 @@
 import json
 import sys
+import logging
 from pathlib import Path
-from multiprocessing import Pool, cpu_count
+
+logger = logging.getLogger(__name__)
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(BASE_DIR))
@@ -14,72 +16,58 @@ OUTPUT_DIR = BASE_DIR / "data" / "dataset_shards"
 
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-
 SHARD_SIZE = 5000
 
 
+def _get_text(item):
+    return item.get("text") or item.get("claim", "")
+
+
 def augment_sample(item):
-
     results = []
-
-    claim = item["claim"]
-
+    text = _get_text(item)
     results.append(item)
 
-    # paraphrases
     try:
-        paras = generate_paraphrases(claim)
-
+        paras = generate_paraphrases(text)
         for p in paras:
             results.append({
-                "claim": p,
-                "context": item["context"],
-                "language": item["language"],
-                "label": item["label"]
+                **item,
+                "text": p,
             })
-    except:
-        pass
+    except Exception as e:
+        logger.warning(f"Paraphrase failed: {e}")
 
-    # translations
     try:
-        translations = translate_claim(claim)
-
+        translations = translate_claim(text)
         for t in translations:
             results.append({
-                "claim": t["claim"],
-                "context": item["context"],
+                **item,
+                "text": t["claim"],
                 "language": t["language"],
-                "label": item["label"]
             })
-    except:
-        pass
+    except Exception as e:
+        logger.warning(f"Translation failed: {e}")
 
     return results
 
 
 def write_shards(dataset):
-
     shard_id = 0
     count = 0
     file = None
 
     for sample in dataset:
-
         if count % SHARD_SIZE == 0:
-
             if file:
                 file.close()
-
             shard_id += 1
-
             file = open(
                 OUTPUT_DIR / f"shard_{shard_id}.jsonl",
                 "w",
                 encoding="utf-8"
             )
-
         file.write(json.dumps(sample) + "\n")
-
         count += 1
 
     if file:
@@ -87,22 +75,18 @@ def write_shards(dataset):
 
 
 def run_scaler():
-
     with open(INPUT_FILE, "r", encoding="utf-8") as f:
         data = json.load(f)
 
     print(f"Loaded {len(data)} samples")
 
     flattened = []
-
     for item in data:
         results = augment_sample(item)
         flattened.extend(results)
 
     print(f"Generated {len(flattened)} samples")
-
     write_shards(flattened)
-
     print("Dataset shards written successfully")
 
 

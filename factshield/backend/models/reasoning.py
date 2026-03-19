@@ -1,6 +1,10 @@
 import os
+import re
 import json
+import logging
 from groq import Groq
+
+logger = logging.getLogger(__name__)
 
 
 def get_groq_client():
@@ -10,12 +14,29 @@ def get_groq_client():
         raise RuntimeError("GROQ_API_KEY is not configured.")
     return Groq(api_key=api_key)
 
+
+def _sanitize_for_prompt(text):
+    """Strip control characters and common prompt injection patterns from user input."""
+    text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', text)
+    injection_patterns = [
+        r'(?i)ignore\s+(all\s+)?(previous|above|prior)\s+(instructions?|prompts?)',
+        r'(?i)you\s+are\s+now\s+',
+        r'(?i)system\s*:\s*',
+        r'(?i)forget\s+(everything|all)',
+    ]
+    for pattern in injection_patterns:
+        text = re.sub(pattern, '[FILTERED]', text)
+    return text.strip()
+
+
 def analyze_claim_with_llm(claim, evidence_list):
     """
     Multi-Agent Debate Engine: Prosecutor vs Defense vs Judge.
     Uses sequential reasoning to deconstruct complex propaganda.
     """
-    context = "\n".join(evidence_list[:3]) if evidence_list else "No external evidence available."
+    safe_claim = _sanitize_for_prompt(claim)
+    safe_evidence = [_sanitize_for_prompt(str(e)) for e in (evidence_list[:3] if evidence_list else [])]
+    context = "\n".join(safe_evidence) if safe_evidence else "No external evidence available."
     model_name = "llama-3.3-70b-versatile"
 
     try:
@@ -28,11 +49,11 @@ def analyze_claim_with_llm(claim, evidence_list):
         Use the provided evidence to support your argument.
 
         Context Evidence: {context}
-        Claim to Analyze: "{claim}"
+        Claim to Analyze: "{safe_claim}"
         
         Provide a sharp, evidence-based argument debunking the claim.
         """
-        
+
         p_res = client.chat.completions.create(
             model=model_name,
             messages=[{"role": "user", "content": prosecutor_prompt}],
@@ -48,11 +69,11 @@ def analyze_claim_with_llm(claim, evidence_list):
         
         Prosecutor's Argument: {prosecutor_argument}
         Context Evidence: {context}
-        Claim to Analyze: "{claim}"
+        Claim to Analyze: "{safe_claim}"
         
         Provide a nuanced counter-argument.
         """
-        
+
         d_res = client.chat.completions.create(
             model=model_name,
             messages=[{"role": "user", "content": defense_prompt}],
@@ -68,7 +89,7 @@ def analyze_claim_with_llm(claim, evidence_list):
         Your goal: Weigh both sides and provide the final definitive verdict.
 
         Context Evidence: {context}
-        Claim: "{claim}"
+        Claim: "{safe_claim}"
         Prosecutor's Case: {prosecutor_argument}
         Defense's Case: {defense_argument}
 
@@ -88,7 +109,7 @@ def analyze_claim_with_llm(claim, evidence_list):
           "historical_context": "10-word fact contrast if historical, else null"
         }}
         """
-        
+
         j_res = client.chat.completions.create(
             model=model_name,
             messages=[{"role": "user", "content": judge_prompt}],
@@ -96,18 +117,17 @@ def analyze_claim_with_llm(claim, evidence_list):
             max_tokens=500,
             response_format={"type": "json_object"}
         )
-        
+
         output = j_res.choices[0].message.content
         res = json.loads(output)
-        
-        # Inject NLI verdict into reason for UI impact
+
         nli = res.get("verdict", "Neutral")
         res["reason"] = f"[{nli.upper()}] {res.get('reason')}"
-        
+
         return res
 
     except Exception as e:
-        print(f"DEBUG: Multi-Agent Debate Error - {e}")
+        logger.error(f"Multi-Agent Debate Error: {e}")
         return {
             "verdict": "Neutral",
             "veracity": "unknown",
@@ -117,10 +137,12 @@ def analyze_claim_with_llm(claim, evidence_list):
             "historical_context": None
         }
 
+
 # Legacy stubs for compatibility
 def fallback_classify(claim, evidence_list):
     res = analyze_claim_with_llm(claim, evidence_list)
     return res.get("veracity", "unknown"), res.get("toxicity", "unknown")
+
 
 def generate_reason(claim, veracity_label, toxicity_label, evidence_list):
     res = analyze_claim_with_llm(claim, evidence_list)

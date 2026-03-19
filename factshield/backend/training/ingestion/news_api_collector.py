@@ -1,28 +1,36 @@
+import os
+import logging
 import requests
 
-API_KEY = "cc1402a2706b4c79a0397af531264aeb"
+logger = logging.getLogger(__name__)
 
 def fetch_news():
-
-    url = f"https://newsapi.org/v2/everything?q=politics OR religion OR conflict&pageSize=100&language=en&apiKey={API_KEY}"
-
-    response = requests.get(url)
-
-    if response.status_code != 200:
+    api_key = os.environ.get("NEWSAPI_KEY")
+    if not api_key:
+        logger.error("NEWSAPI_KEY is not configured in environment variables.")
         return []
 
-    data = response.json()
+    url = f"https://newsapi.org/v2/everything?q=politics OR religion OR conflict&pageSize=100&language=en&apiKey={api_key}"
 
-    articles = []
+    try:
+        response = requests.get(url, timeout=10)
+        if response.status_code != 200:
+            logger.warning(f"NewsAPI returned status {response.status_code}")
+            return []
 
-    for article in data["articles"]:
+        data = response.json()
+        articles = []
 
-        articles.append({
-            "title": article["title"],
-            "content": article["description"],
-            "source": article["source"]["name"],
-            "url": article["url"],
-            "type": "news"
-        })
+        for article in data.get("articles", []):
+            articles.append({
+                "title": article.get("title", ""),
+                "content": article.get("description", ""),
+                "source": article.get("source", {}).get("name", "unknown"),
+                "url": article.get("url", ""),
+                "type": "news"
+            })
 
-    return articles
+        return articles
+    except Exception as e:
+        logger.error(f"NewsAPI fetch failed: {e}")
+        return []

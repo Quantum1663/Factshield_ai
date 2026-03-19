@@ -1,15 +1,16 @@
+import logging
 from deep_translator import GoogleTranslator
+
+logger = logging.getLogger(__name__)
 
 LANGUAGES = ["hi", "mr", "ur", "bn", "ta"]
 
-def translate_claim(text):
 
+def translate_claim(text):
     translations = []
 
     for lang in LANGUAGES:
-
         try:
-
             translated = GoogleTranslator(
                 source="auto",
                 target=lang
@@ -19,8 +20,8 @@ def translate_claim(text):
                 "claim": translated,
                 "language": lang
             })
-
-        except:
+        except Exception as e:
+            logger.warning(f"Translation to {lang} failed: {e}")
             continue
 
     return translations

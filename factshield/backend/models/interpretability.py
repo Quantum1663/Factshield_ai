@@ -1,6 +1,9 @@
+import logging
 import torch
 import numpy as np
-from models.classifier import model, tokenizer, CLASSES, VERACITY_INDICES
+from models.classifier import model, tokenizer, CLASSES, VERACITY_INDICES, DEVICE
+
+logger = logging.getLogger(__name__)
 
 VERACITY_LABEL_TO_INDEX = {
     CLASSES[idx].replace("veracity_", ""): idx for idx in VERACITY_INDICES
@@ -21,13 +24,13 @@ def _resolve_target_class_index(logits, target_label=None):
 def _clean_token(token):
     if token.startswith("##"):
         return token[2:]
-    if token.startswith("▁") or token.startswith("Ġ"):
+    if token.startswith("\u2581") or token.startswith("\u0120"):
         return token[1:]
     return token
 
 
 def _token_starts_new_word(token):
-    return token.startswith("▁") or token.startswith("Ġ")
+    return token.startswith("\u2581") or token.startswith("\u0120")
 
 
 def _compute_token_scores(input_ids, attention_mask, token_type_ids, target_class_idx):
@@ -79,36 +82,33 @@ def explain_prediction(text, target_label=None):
     Uses token occlusion for stable signed token attribution.
     Maps subword attributions back to whole words.
     """
-    print(f"DEBUG: Starting XAI Calculation for: {text[:50]}...")
+    logger.info(f"Starting XAI Calculation for: {text[:50]}...")
     model.eval()
-    
-    # 1. Tokenize
+
     inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=128)
-    input_ids = inputs['input_ids']
-    attention_mask = inputs['attention_mask']
+    input_ids = inputs['input_ids'].to(DEVICE)
+    attention_mask = inputs['attention_mask'].to(DEVICE)
     token_type_ids = inputs.get('token_type_ids')
-    
-    # 2. Get Predicted Class
+    if token_type_ids is not None:
+        token_type_ids = token_type_ids.to(DEVICE)
+
     with torch.no_grad():
         outputs = model(input_ids, attention_mask=attention_mask, token_type_ids=token_type_ids)
         logits = outputs.logits[0]
         target_class_idx = _resolve_target_class_index(logits, target_label=target_label)
-    
-    print(f"DEBUG: Attributing for class index {target_class_idx} (Logits Mode)")
 
-    # 3. Score token importance by how much masking the token changes the target logit
+    logger.info(f"Attributing for class index {target_class_idx} (Logits Mode)")
+
     attributions = _compute_token_scores(input_ids, attention_mask, token_type_ids, target_class_idx)
-    
-    # 4. Map subword attributions back to words
+
     tokens = tokenizer.convert_ids_to_tokens(input_ids[0])
-    
+
     word_attributions = []
     current_word = None
     current_score = 0.0
     force_new_word = False
-    
+
     for token, score in zip(tokens, attributions):
-        # Clean score
         clean_score = float(score)
         if np.isnan(clean_score) or np.isinf(clean_score):
             clean_score = 0.0
@@ -116,7 +116,7 @@ def explain_prediction(text, target_label=None):
         if token in [tokenizer.cls_token, tokenizer.sep_token, tokenizer.pad_token, '<s>', '</s>', '<pad>']:
             continue
 
-        if token in {"▁", "Ġ"}:
+        if token in {"\u2581", "\u0120"}:
             if current_word is not None:
                 final_word = current_word.strip()
                 if final_word:
@@ -154,7 +154,7 @@ def explain_prediction(text, target_label=None):
             else:
                 current_word += clean_token
                 current_score += clean_score
-                
+
     if current_word is not None:
         final_word = current_word.strip()
         if final_word:
@@ -162,6 +162,6 @@ def explain_prediction(text, target_label=None):
                 "word": final_word,
                 "attribution_score": float(current_score)
             })
-        
-    print(f"DEBUG: XAI Complete. Results: {len(word_attributions)} words.")
+
+    logger.info(f"XAI Complete. Results: {len(word_attributions)} words.")
     return word_attributions

@@ -1,8 +1,12 @@
+import logging
 from langdetect import detect
 
-def detect_language(text):
+logger = logging.getLogger(__name__)
 
+
+def detect_language(text):
     try:
         return detect(text)
-    except:
+    except Exception as e:
+        logger.warning(f"Language detection failed: {e}")
         return "unknown"

@@ -23,6 +23,7 @@ MODEL_DIR = BASE_DIR / "factshield_model"
 MODEL_NAME = "xlm-roberta-base"
 MAX_LENGTH = 128
 SEED = 42
+VALIDATION_SPLIT = 0.15
 
 CLASSES = [
     "real", "fake", "misleading", "veracity_unknown",
@@ -119,6 +120,11 @@ dataset = dataset.remove_columns(
 )
 dataset.set_format(type="torch")
 
+split = dataset.train_test_split(test_size=VALIDATION_SPLIT, seed=SEED)
+train_dataset = split["train"]
+eval_dataset = split["test"]
+print(f"Train samples: {len(train_dataset)}, Validation samples: {len(eval_dataset)}")
+
 print(f"CUDA available: {torch.cuda.is_available()}")
 if torch.cuda.is_available():
     print(f"GPU: {torch.cuda.get_device_name(0)}")
@@ -142,11 +148,15 @@ training_args = TrainingArguments(
             "learning_rate": 2e-5,
             "per_device_train_batch_size": 8,
             "num_train_epochs": 2,
+            "eval_strategy": "steps",
+            "eval_steps": 200,
             "logging_strategy": "steps",
             "logging_steps": 50,
             "save_strategy": "steps",
             "save_steps": 500,
             "save_total_limit": 2,
+            "load_best_model_at_end": True,
+            "metric_for_best_model": "eval_loss",
             "max_grad_norm": 1.0,
             "dataloader_pin_memory": torch.cuda.is_available(),
             "report_to": "none",
@@ -160,7 +170,8 @@ training_args = TrainingArguments(
 trainer = Trainer(
     model=model,
     args=training_args,
-    train_dataset=dataset,
+    train_dataset=train_dataset,
+    eval_dataset=eval_dataset,
     data_collator=DataCollatorWithPadding(tokenizer=tokenizer, padding="longest"),
     callbacks=[StopOnNonFiniteLoss()],
 )

@@ -32,10 +32,10 @@
       }
     };
   </script>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone@7.26.9/babel.min.js"></script>
+  <script src="https://unpkg.com/vis-network@9.1.9/standalone/umd/vis-network.min.js"></script>
   <style>
     body {
       background:
@@ -120,13 +120,25 @@
         localStorage.setItem("truth_points_v6", String(next));
       };
 
-      const refreshFeed = async () => { try { const r = await fetch(`${API_BASE}/feed`); if (r.ok) setFeed(await r.json()); } catch {} };
-      const refreshArchive = async () => { try { const r = await fetch(`${API_BASE}/archive`); if (r.ok) setArchive(await r.json()); } catch {} };
-      const refreshStats = async () => { try { const r = await fetch(`${API_BASE}/system-status`); if (r.ok) setStats(await r.json()); } catch {} };
-      const refreshNeural = async () => { try { const r = await fetch(`${API_BASE}/neural-stats`); if (r.ok) setNeural(await r.json()); } catch {} };
+      const refreshFeed = async () => { try { const r = await fetch(`${API_BASE}/feed`); if (r.ok) setFeed(await r.json()); } catch (e) { console.error("Feed refresh failed:", e); } };
+      const refreshArchive = async () => { try { const r = await fetch(`${API_BASE}/archive`); if (r.ok) setArchive(await r.json()); } catch (e) { console.error("Archive refresh failed:", e); } };
+      const refreshStats = async () => { try { const r = await fetch(`${API_BASE}/system-status`); if (r.ok) setStats(await r.json()); } catch (e) { console.error("Stats refresh failed:", e); } };
+      const refreshNeural = async () => { try { const r = await fetch(`${API_BASE}/neural-stats`); if (r.ok) setNeural(await r.json()); } catch (e) { console.error("Neural refresh failed:", e); } };
 
-      const poll = (taskId) => {
+      const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+      const MAX_VIDEO_SIZE = 100 * 1024 * 1024;
+
+      const pollWithReward = (taskId, rewardPoints) => {
+        let retries = 0;
+        const MAX_RETRIES = 90;
         const interval = setInterval(async () => {
+          retries++;
+          if (retries > MAX_RETRIES) {
+            clearInterval(interval);
+            setLoading(false);
+            alert("Analysis timed out after 3 minutes. Please try again.");
+            return;
+          }
           try {
             const r = await fetch(`${API_BASE}/task-status/${taskId}`);
             const data = await r.json();
@@ -134,6 +146,7 @@
               clearInterval(interval);
               setResult(data.result);
               setLoading(false);
+              bump(rewardPoints);
             }
             if (data.status === "failed") {
               clearInterval(interval);
@@ -160,8 +173,7 @@
           });
           const data = await r.json();
           if (!r.ok) throw new Error(data.detail || data.error || "Request failed");
-          bump(20);
-          if (data.task_id) poll(data.task_id); else { setResult(data); setLoading(false); }
+          if (data.task_id) pollWithReward(data.task_id, 20); else { setResult(data); setLoading(false); bump(20); }
         } catch (e) {
           setLoading(false);
           alert(e.message || "Backend unreachable");
@@ -170,6 +182,11 @@
 
       const submitUpload = async (file, endpoint) => {
         if (!file) return;
+        const maxSize = endpoint.includes("video") ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
+        if (file.size > maxSize) {
+          alert(`File too large. Maximum size: ${Math.round(maxSize / 1024 / 1024)}MB`);
+          return;
+        }
         setLoading(true);
         const form = new FormData();
         form.append("file", file);
@@ -177,8 +194,7 @@
           const r = await fetch(`${API_BASE}${endpoint}`, { method: "POST", body: form });
           const data = await r.json();
           if (!r.ok) throw new Error(data.detail || data.error || "Upload failed");
-          bump(40);
-          if (data.task_id) poll(data.task_id); else { setResult(data); setLoading(false); }
+          if (data.task_id) pollWithReward(data.task_id, 40); else { setResult(data); setLoading(false); bump(40); }
         } catch (e) {
           setLoading(false);
           alert(e.message || "Upload failed");

@@ -10,11 +10,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <!-- Scripts -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone@7.26.9/babel.min.js"></script>
+    <script src="https://unpkg.com/vis-network@9.1.9/standalone/umd/vis-network.min.js"></script>
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -93,6 +93,13 @@
         .animate-pulse-slow {
             animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
+        @keyframes fade-in-up {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-in {
+            animation: fade-in-up 0.5s ease-out forwards;
+        }
     </style>
 </head>
 <body class="font-sans antialiased">
@@ -105,12 +112,17 @@
             ? (window.location.protocol.startsWith('http') ? window.location.origin : "http://127.0.0.1:8000")
             : "http://127.0.0.1:8000";
 
-        // Icons Component Helper
+        // Icons Component Helper — uses a ref so Lucide's DOM mutations
+        // stay inside a container React never tries to reconcile.
         const Icon = ({ name, size = 20, className = "" }) => {
+            const ref = useRef(null);
             useEffect(() => {
-                if (window.lucide) window.lucide.createIcons();
+                if (ref.current && window.lucide) {
+                    ref.current.innerHTML = `<i data-lucide="${name}"></i>`;
+                    window.lucide.createIcons({ nodes: [ref.current] });
+                }
             }, [name]);
-            return <i data-lucide={name} className={className} style={{ width: size, height: size }}></i>;
+            return <span ref={ref} className={className} style={{ width: size, height: size, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}></span>;
         };
 
         // Evidence Graph Component
@@ -232,7 +244,17 @@
 
             const poll = (taskId) => {
                 setActiveTask(taskId);
+                let retries = 0;
+                const MAX_RETRIES = 90;
                 const interval = setInterval(async () => {
+                    retries++;
+                    if (retries > MAX_RETRIES) {
+                        clearInterval(interval);
+                        setLoading(false);
+                        setActiveTask(null);
+                        alert("Analysis timed out after 3 minutes. Please try again.");
+                        return;
+                    }
                     try {
                         const r = await fetch(`${API_BASE}/task-status/${taskId}`);
                         const data = await r.json();
@@ -260,6 +282,7 @@
             const submitClaim = async (text = query) => {
                 const claim = String(text || "").trim();
                 if (!claim) return;
+                setResult(null);
                 setLoading(true);
                 try {
                     const r = await fetch(`${API_BASE}/verify`, {
@@ -276,8 +299,16 @@
                 }
             };
 
+            const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+            const MAX_VIDEO_SIZE = 100 * 1024 * 1024;
+
             const submitUpload = async (file, endpoint) => {
                 if (!file) return;
+                const maxSize = endpoint.includes("video") ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
+                if (file.size > maxSize) {
+                    alert(`File too large. Maximum size: ${Math.round(maxSize / 1024 / 1024)}MB`);
+                    return;
+                }
                 setLoading(true);
                 const form = new FormData();
                 form.append("file", file);
@@ -562,7 +593,7 @@
                         )) : (
                             <div className="col-span-full py-20 flex flex-col items-center justify-center text-gray-500 space-y-4">
                                 <Icon name="rss" size={48} className="opacity-20" />
-                                <p>Intelligence feed is currently synchronization. Please wait...</p>
+                                <p>Intelligence feed is currently synchronizing. Please wait...</p>
                             </div>
                         )}
                     </div>
@@ -732,10 +763,10 @@
                                 
                                 <div className="space-y-8 flex-grow">
                                     {[
-                                        { label: "Neural Engine Load", val: "Optimal", color: "bg-accent-emerald" },
-                                        { label: "RAG Latency", val: "142ms", color: "bg-accent-emerald" },
-                                        { label: "LLM Token Stream", val: "Active", color: "bg-primary" },
-                                        { label: "XAI Calculation", val: "Ready", color: "bg-primary" }
+                                        { label: "Neural Engine Load", val: "Optimal", color: "bg-accent-emerald", pct: 87 },
+                                        { label: "RAG Latency", val: "142ms", color: "bg-accent-emerald", pct: 72 },
+                                        { label: "LLM Token Stream", val: "Active", color: "bg-primary", pct: 91 },
+                                        { label: "XAI Calculation", val: "Ready", color: "bg-primary", pct: 68 }
                                     ].map((m, i) => (
                                         <div key={i} className="space-y-2">
                                             <div className="flex justify-between text-xs font-medium">
@@ -743,7 +774,7 @@
                                                 <span className="text-white">{m.val}</span>
                                             </div>
                                             <div className="h-1.5 w-full bg-dark-700 rounded-full overflow-hidden">
-                                                <div className={`h-full ${m.color} rounded-full`} style={{ width: `${Math.random() * 40 + 60}%` }}></div>
+                                                <div className={`h-full ${m.color} rounded-full`} style={{ width: `${m.pct}%` }}></div>
                                             </div>
                                         </div>
                                     ))}
@@ -901,12 +932,12 @@
 
                     {result && renderResultModal()}
                     
-                    {/* Global Search / Command Bar Overlay */}
-                    {loading && !activeTask && (
-                        <div className="fixed bottom-10 right-10 z-40 bg-dark-800 p-4 rounded-2xl border border-primary/30 shadow-neon animate-bounce">
-                            <div className="flex items-center gap-3">
-                                <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
-                                <span className="text-sm font-bold text-primary">Pipeline Active...</span>
+                    {loading && (
+                        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 glass p-5 rounded-2xl border border-primary/30 shadow-neon flex items-center gap-4">
+                            <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+                            <div>
+                                <span className="text-sm font-bold text-primary block">SAMI Pipeline Active...</span>
+                                <span className="text-xs text-gray-400">Analyzing through classification, RAG, and reasoning layers</span>
                             </div>
                         </div>
                     )}
