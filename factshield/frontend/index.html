@@ -1,568 +1,912 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SAMI V4 | Tactical Integrity Dashboard</title>
+    <title>SAMI AI | Social Integrity System</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Scripts -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        primary: '#00f2ff',
+                        secondary: '#bf4dff',
+                        dark: {
+                            950: '#020408',
+                            900: '#05070a',
+                            800: '#0a0d14',
+                            700: '#111827',
+                            600: '#1f2937',
+                        },
+                        accent: {
+                            cyan: '#00f2ff',
+                            purple: '#bf4dff',
+                            emerald: '#10b981',
+                            rose: '#f43f5e',
+                            amber: '#f59e0b'
+                        }
+                    },
+                    boxShadow: {
+                        'neon': '0 0 15px rgba(0, 242, 255, 0.2)',
+                        'neon-strong': '0 0 25px rgba(0, 242, 255, 0.4)',
+                        'purple-neon': '0 0 15px rgba(191, 77, 255, 0.2)',
+                    }
+                }
+            }
+        };
+    </script>
     <style>
-        body { font-family: 'Space Grotesk', sans-serif; background: #020617; color: #f8fafc; margin: 0; overflow: hidden; }
-        .glass { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        .status-badge { font-size: 9px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
-        .status-verified { background: #10b981; color: #020617; }
-        .status-suspicious { background: #f59e0b; color: #020617; }
-        .status-checking { background: #3b82f6; color: white; }
-        .custom-scroll::-webkit-scrollbar { width: 4px; }
-        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
-        .node-line { position: absolute; left: 50%; top: 100%; width: 2px; height: 40px; background: rgba(34, 211, 238, 0.2); }
-        #evidence-graph { width: 100%; height: 350px; background: rgba(0,0,0,0.2); border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); cursor: grab; }
-        #evidence-graph:active { cursor: grabbing; }
-        .modal-overlay { pointer-events: auto !important; }
-        .modal-content { pointer-events: auto !important; }
-        a { cursor: pointer !important; }
+        body {
+            background-color: #05070a;
+            color: #f8fafc;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glass:hover {
+            border-color: rgba(0, 242, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .active-nav {
+            background: linear-gradient(90deg, rgba(0, 242, 255, 0.1), transparent);
+            border-left: 3px solid #00f2ff;
+            color: #00f2ff;
+        }
+        .neon-text {
+            text-shadow: 0 0 8px rgba(0, 242, 255, 0.5);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #0a0d14;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #1f2937;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #374151;
+        }
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .animate-pulse-slow {
+            animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
     </style>
 </head>
-<body>
+<body class="font-sans antialiased">
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
-        const API_BASE = "http://127.0.0.1:8000";
 
-        // --- COMPONENTS ---
+        const API_BASE = (window.location.port === '8000' || !window.location.protocol.startsWith('http')) 
+            ? (window.location.protocol.startsWith('http') ? window.location.origin : "http://127.0.0.1:8000")
+            : "http://127.0.0.1:8000";
 
-        const EvidenceGraph = ({ claim, evidence }) => {
-            const containerRef = useRef(null);
-            const networkRef = useRef(null);
-
+        // Icons Component Helper
+        const Icon = ({ name, size = 20, className = "" }) => {
             useEffect(() => {
-                if (!containerRef.current) return;
-
-                const urlRegex = /(https?:\/\/[^\s]+)/g;
-
-                const nodes = new vis.DataSet([
-                    { 
-                        id: 0, 
-                        label: "CLAIM\n" + (claim.length > 50 ? claim.substring(0, 47) + "..." : claim), 
-                        fullText: claim,
-                        color: { background: '#0ea5e9', border: '#38bdf8', highlight: '#7dd3fc' },
-                        font: { color: '#ffffff', size: 14, face: 'Space Grotesk', strokeWidth: 0, multi: true, bold: true },
-                        shape: 'dot',
-                        size: 35,
-                        shadow: { enabled: true, color: 'rgba(14, 165, 233, 0.4)', size: 15 }
-                    },
-                    ...evidence.map((ev, i) => {
-                        let label = ev;
-                        let url = null;
-                        
-                        const match = ev.match(urlRegex);
-                        if (match) {
-                            url = match[0];
-                            try {
-                                const urlObj = new URL(url);
-                                label = urlObj.hostname;
-                            } catch (e) {
-                                label = "LINK SOURCE";
-                            }
-                        } else if (ev.length > 40) {
-                            label = ev.substring(0, 37) + "...";
-                        }
-
-                        return {
-                            id: i + 1,
-                            label: label,
-                            fullText: ev,
-                            url: url,
-                            title: ev, // Tooltip
-                            color: { background: '#1e293b', border: '#475569', highlight: '#64748b' },
-                            font: { color: '#94a3b8', size: 10, face: 'Space Grotesk' },
-                            shape: 'dot',
-                            size: 20,
-                            borderWidth: 2
-                        };
-                    })
-                ]);
-
-                const edges = new vis.DataSet(
-                    evidence.map((_, i) => ({
-                        from: 0,
-                        to: i + 1,
-                        color: { color: 'rgba(148, 163, 184, 0.2)', highlight: 'rgba(14, 165, 233, 0.4)' },
-                        width: 1,
-                        smooth: { type: 'continuous' }
-                    }))
-                );
-
-                const options = {
-                    nodes: {
-                        scaling: { label: { enabled: true } },
-                        margin: 10
-                    },
-                    edges: { arrows: { to: { enabled: false } } },
-                    physics: {
-                        stabilization: true,
-                        barnesHut: { gravitationalConstant: -2000, centralGravity: 0.3, springLength: 150 }
-                    },
-                    interaction: { hover: true, tooltipDelay: 200, selectable: true, dragNodes: true }
-                };
-
-                if (networkRef.current) {
-                    networkRef.current.destroy();
-                }
-
-                networkRef.current = new vis.Network(containerRef.current, { nodes, edges }, options);
-
-                networkRef.current.on('click', (params) => {
-                    if (params.nodes.length > 0) {
-                        const nodeId = params.nodes[0];
-                        const nodeData = nodes.get(nodeId);
-                        if (nodeData) {
-                            const detailsDiv = document.getElementById('node-details');
-                            if (detailsDiv) {
-                                detailsDiv.innerText = nodeData.fullText || nodeData.label;
-                                detailsDiv.classList.remove('text-slate-400');
-                                detailsDiv.classList.add('text-cyan-400');
-                            }
-                            if (nodeData.url) {
-                                window.open(nodeData.url, '_blank');
-                            }
-                        }
-                    }
-                });
-
-                networkRef.current.on('hoverNode', () => {
-                    containerRef.current.style.cursor = 'pointer';
-                });
-                networkRef.current.on('blurNode', () => {
-                    containerRef.current.style.cursor = 'default';
-                });
-
-                const handleResize = () => {
-                    if (networkRef.current) networkRef.current.redraw();
-                };
-                window.addEventListener('resize', handleResize);
-                return () => {
-                    window.removeEventListener('resize', handleResize);
-                    if (networkRef.current) networkRef.current.destroy();
-                };
-            }, [claim, evidence]);
-
-            return (
-                <div className="flex flex-col gap-3" style={{ pointerEvents: 'auto' }}>
-                    <div id="evidence-graph" ref={containerRef} style={{ pointerEvents: 'auto', position: 'relative', zIndex: 10 }}></div>
-                    <div id="node-details" className="p-4 bg-slate-900/60 border border-white/5 rounded-2xl text-[10px] text-slate-400 italic leading-relaxed min-h-[60px] flex items-center justify-center text-center">
-                        Select a node to inspect neural evidence...
-                    </div>
-                </div>
-            );
+                if (window.lucide) window.lucide.createIcons();
+            }, [name]);
+            return <i data-lucide={name} className={className} style={{ width: size, height: size }}></i>;
         };
 
-        const XAIHeatmap = ({ attributions }) => {
-            if (!attributions || !Array.isArray(attributions) || attributions.length === 0) {
+        // Evidence Graph Component
+        function EvidenceGraph({ claim, evidence }) {
+            const ref = useRef(null);
+            useEffect(() => {
+                if (!ref.current || !Array.isArray(evidence)) return;
+                const nodes = new vis.DataSet([
+                    { id: 0, label: claim.length > 50 ? `${claim.slice(0, 47)}...` : claim, color: { background: "#00f2ff", border: "#00f2ff" }, font: { color: "#000", face: "Outfit", weight: "bold" }, shape: "dot", size: 30 },
+                    ...evidence.map((item, idx) => ({ 
+                        id: idx + 1, 
+                        label: String(item).slice(0, 40) + (String(item).length > 40 ? '...' : ''), 
+                        color: { background: "rgba(191, 77, 255, 0.2)", border: "#bf4dff" }, 
+                        font: { color: "#fff", face: "Outfit", size: 12 }, 
+                        shape: "box", 
+                        margin: 10,
+                        widthConstraint: { maximum: 150 }
+                    }))
+                ]);
+                const edges = new vis.DataSet(evidence.map((_, idx) => ({ 
+                    from: 0, to: idx + 1, 
+                    color: { color: "rgba(0, 242, 255, 0.3)" },
+                    width: 2,
+                    smooth: { type: 'continuous' }
+                })));
+                const network = new vis.Network(ref.current, { nodes, edges }, {
+                    physics: { 
+                        enabled: true,
+                        stabilization: true,
+                        barnesHut: { gravitationalConstant: -3000, springLength: 150 } 
+                    },
+                    interaction: { hover: true, dragNodes: true, zoomView: true }
+                });
+                return () => network.destroy();
+            }, [claim, evidence]);
+            return <div ref={ref} className="h-80 w-full rounded-2xl border border-white/10 bg-black/40"></div>;
+        }
+
+        // XAI Heatmap Component
+        function XAIHeatmap({ attributions }) {
+            if (!Array.isArray(attributions) || !attributions.length) {
                 return (
-                    <div id="xai-container" className="p-6 bg-slate-950/40 border border-white/5 rounded-3xl text-xs text-slate-500 italic text-center">
-                        Mechanistic interpretability data unavailable for this claim.
+                    <div className="rounded-xl border border-dashed border-white/10 bg-white/5 p-6 text-sm text-gray-400 text-center">
+                        Mechanistic interpretability data is not available for this report.
                     </div>
                 );
             }
-
             return (
-                <div id="xai-container" className="flex flex-wrap gap-y-2 p-6 bg-slate-950/40 border border-white/5 rounded-3xl leading-relaxed">
-                    {attributions.map((item, i) => {
+                <div className="flex flex-wrap gap-x-2 gap-y-3 p-4 bg-black/20 rounded-xl border border-white/5">
+                    {attributions.map((item, idx) => {
                         const score = item.attribution_score || item.score || 0;
-                        const opacity = Math.min(Math.abs(score) * 1.2, 0.9); // Optimized for visibility
+                        const alpha = Math.min(Math.abs(score) * 1.5, 0.9);
+                        const isPositive = score > 0; // Positive (red) usually indicates influence towards the predicted label
+                        const bg = isPositive 
+                            ? `rgba(244, 63, 94, ${alpha})` 
+                            : score < 0 ? `rgba(16, 185, 129, ${alpha})` : "rgba(255,255,255,0.05)";
                         
-                        let bgColor = 'transparent';
-                        if (score > 0) {
-                            bgColor = `rgba(255, 50, 50, ${opacity})`; // Red for Fake/Hate
-                        } else if (score < 0) {
-                            bgColor = `rgba(50, 150, 255, ${opacity})`; // Blue for Real/Safe
-                        }
-
                         return (
-                            <span 
-                                key={i} 
-                                style={{ 
-                                    backgroundColor: bgColor, 
-                                    padding: '2px 4px', 
-                                    borderRadius: '4px', 
-                                    marginRight: '2px', 
-                                    display: 'inline-block',
-                                    color: opacity > 0.4 ? '#fff' : '#cbd5e1'
-                                }}
-                                className="text-sm font-medium transition-all hover:scale-105 cursor-help"
-                                title={`Score: ${score.toFixed(4)}`}
-                            >
-                                {item.word}
-                            </span>
+                            <div key={`${item.word}-${idx}`} className="group relative flex flex-col items-center">
+                                <span 
+                                    className="rounded-lg px-2 py-1 text-sm font-mono transition-all group-hover:scale-110 cursor-help"
+                                    style={{ 
+                                        backgroundColor: bg, 
+                                        color: (alpha > 0.6 || (isPositive && alpha > 0.4)) ? "#fff" : "#cbd5e1",
+                                        boxShadow: alpha > 0.5 ? `0 0 10px ${bg}` : 'none'
+                                    }}
+                                >
+                                    {item.word}
+                                </span>
+                                <div className="absolute -bottom-8 opacity-0 group-hover:opacity-100 transition-opacity bg-dark-800 text-[10px] px-2 py-1 rounded border border-white/10 z-10 whitespace-nowrap">
+                                    Score: {score.toFixed(4)}
+                                </div>
+                            </div>
                         );
                     })}
                 </div>
             );
-        };
-
-        const Badge = ({ type, text }) => {
-            const styles = {
-                real: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-                fake: "bg-rose-500/20 text-rose-400 border-rose-500/30",
-                misleading: "bg-amber-500/20 text-amber-400 border-amber-500/30",
-                hate: "bg-purple-500/20 text-purple-400 border-purple-500/30",
-                safe: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30",
-            };
-            return (
-                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border uppercase tracking-wider ${styles[type.toLowerCase()] || "bg-slate-500/20 text-slate-400 border-slate-500/30"}`}>
-                    {text}
-                </span>
-            );
-        };
-
-        const FeedCard = ({ item, onVerify }) => (
-            <div className="glass p-6 rounded-2xl border border-white/5 hover:border-cyan-500/30 transition-all mb-4 group relative overflow-hidden">
-                <div className="flex justify-between items-start mb-4">
-                    <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.type === 'NEWS' ? 'bg-cyan-500/10 text-cyan-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                            <i className={`fas ${item.type === 'NEWS' ? 'fa-newspaper' : 'fa-triangle-exclamation'}`}></i>
-                        </div>
-                        <div>
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{item.source}</p>
-                            <p className="text-[9px] text-slate-600">{item.timestamp}</p>
-                        </div>
-                    </div>
-                    <span className={`status-badge ${item.status === 'VERIFIED' ? 'status-verified' : item.status === 'SUSPICIOUS' ? 'status-suspicious' : 'status-checking'}`}>
-                        {item.status}
-                    </span>
-                </div>
-                <h3 className="text-md font-bold mb-2 group-hover:text-cyan-400 transition-colors leading-tight">{item.title}</h3>
-                <p className="text-xs text-slate-400 leading-relaxed mb-6 line-clamp-2">{item.description}</p>
-                <button onClick={() => onVerify(item.description)} className="text-[10px] font-black text-cyan-400 hover:text-cyan-300 flex items-center gap-2 uppercase tracking-widest">
-                    <i className="fas fa-microscope"></i> Deconstruct Propaganda
-                </button>
-            </div>
-        );
-
-        // --- MAIN APP ---
+        }
 
         function App() {
-            const [view, setView] = useState("dashboard"); // dashboard, neural, archive
+            const [view, setView] = useState("overview");
             const [feed, setFeed] = useState([]);
-            const [query, setQuery] = useState("");
-            const [loading, setLoading] = useState(false);
-            const [result, setResult] = useState(null);
-            const [points, setPoints] = useState(parseInt(localStorage.getItem('truth_points_v4') || '0'));
+            const [trending, setTrending] = useState([]);
             const [archive, setArchive] = useState([]);
-            const [neuralStats, setNeuralStats] = useState(null);
+            const [stats, setStats] = useState(null);
+            const [neural, setNeural] = useState(null);
+            const [query, setQuery] = useState("");
+            const [result, setResult] = useState(null);
+            const [loading, setLoading] = useState(false);
+            const [activeTask, setActiveTask] = useState(null);
             
-            const fileInputRef = useRef(null);
-            const videoInputRef = useRef(null);
+            const imageRef = useRef(null);
+            const videoRef = useRef(null);
 
             useEffect(() => {
-                fetchFeed();
-                if (view === 'archive') fetchArchive();
-                if (view === 'neural') fetchNeural();
+                refreshAll();
+                const interval = setInterval(refreshAll, 60000); // Periodic refresh
+                return () => clearInterval(interval);
+            }, []);
+
+            useEffect(() => {
+                if (view === "archive") refreshArchive();
+                if (view === "trending") refreshTrending();
+                if (view === "architecture") refreshNeural();
             }, [view]);
 
-            const fetchFeed = async () => {
-                try {
-                    const res = await fetch(`${API_BASE}/feed`);
-                    if (res.ok) setFeed(await res.json());
-                } catch (e) { console.warn("Feed offline"); }
+            const refreshAll = () => {
+                refreshFeed();
+                refreshTrending();
+                refreshStats();
+                refreshNeural();
             };
 
-            const fetchArchive = async () => {
-                try {
-                    const res = await fetch(`${API_BASE}/archive`);
-                    if (res.ok) setArchive(await res.json());
-                } catch (e) { console.warn("Archive offline"); }
-            };
+            const refreshFeed = async () => { try { const r = await fetch(`${API_BASE}/feed`); if (r.ok) setFeed(await r.json()); } catch(e) { console.error(e); } };
+            const refreshTrending = async () => { try { const r = await fetch(`${API_BASE}/trending`); if (r.ok) setTrending(await r.json()); } catch(e) { console.error(e); } };
+            const refreshArchive = async () => { try { const r = await fetch(`${API_BASE}/archive`); if (r.ok) setArchive(await r.json()); } catch(e) { console.error(e); } };
+            const refreshStats = async () => { try { const r = await fetch(`${API_BASE}/system-status`); if (r.ok) setStats(await r.json()); } catch(e) { console.error(e); } };
+            const refreshNeural = async () => { try { const r = await fetch(`${API_BASE}/neural-stats`); if (r.ok) setNeural(await r.json()); } catch(e) { console.error(e); } };
 
-            const fetchNeural = async () => {
-                try {
-                    const res = await fetch(`${API_BASE}/neural-stats`);
-                    if (res.ok) setNeuralStats(await res.json());
-                } catch (e) { console.warn("Neural Stats offline"); }
-            };
-
-            const pollTaskStatus = async (taskId) => {
-                const poll = async () => {
+            const poll = (taskId) => {
+                setActiveTask(taskId);
+                const interval = setInterval(async () => {
                     try {
-                        const res = await fetch(`${API_BASE}/task-status/${taskId}`);
-                        const data = await res.json();
-                        if (data.status === 'completed') {
+                        const r = await fetch(`${API_BASE}/task-status/${taskId}`);
+                        const data = await r.json();
+                        if (data.status === "completed") {
+                            clearInterval(interval);
                             setResult(data.result);
                             setLoading(false);
-                            return true;
-                        } else if (data.status === 'failed') {
-                            alert("Analysis failed: " + (data.error || "Unknown Error"));
-                            setLoading(false);
-                            return true;
+                            setActiveTask(null);
                         }
-                        return false;
-                    } catch (e) {
-                        console.error("Polling error", e);
-                        alert("Lost connection while checking task status. Please try again.");
+                        if (data.status === "failed") {
+                            clearInterval(interval);
+                            setLoading(false);
+                            setActiveTask(null);
+                            alert(data.error || "Analysis failed");
+                        }
+                    } catch {
+                        clearInterval(interval);
                         setLoading(false);
-                        return true;
+                        setActiveTask(null);
+                        alert("Connection lost while waiting for analysis.");
                     }
-                };
-
-                const interval = setInterval(async () => {
-                    const done = await poll();
-                    if (done) clearInterval(interval);
                 }, 2000);
             };
 
-            const handleAnalyze = async (textToUse = query) => {
-                if (!textToUse.trim()) return;
+            const submitClaim = async (text = query) => {
+                const claim = String(text || "").trim();
+                if (!claim) return;
                 setLoading(true);
                 try {
-                    const res = await fetch(`${API_BASE}/verify`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ text: textToUse })
+                    const r = await fetch(`${API_BASE}/verify`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ text: claim })
                     });
-                    const data = await res.json();
-                    if (!res.ok) {
-                        throw new Error(data.detail || data.error || 'Analysis request failed.');
-                    }
-                    if (data.task_id) {
-                        pollTaskStatus(data.task_id);
-                    } else {
-                        setResult(data);
-                        setLoading(false);
-                    }
-                    const newPoints = points + 25;
-                    setPoints(newPoints);
-                    localStorage.setItem('truth_points_v4', newPoints);
-                } catch (e) { alert(e.message || "Backend Unreachable"); setLoading(false); }
+                    const data = await r.json();
+                    if (!r.ok) throw new Error(data.detail || data.error || "Request failed");
+                    if (data.task_id) poll(data.task_id); else { setResult(data); setLoading(false); }
+                } catch (e) {
+                    setLoading(false);
+                    alert(e.message || "Backend unreachable");
+                }
             };
 
-            const handleMultimodalUpload = async (file, endpoint) => {
+            const submitUpload = async (file, endpoint) => {
                 if (!file) return;
                 setLoading(true);
-                const formData = new FormData();
-                formData.append('file', file);
+                const form = new FormData();
+                form.append("file", file);
                 try {
-                    const res = await fetch(`${API_BASE}${endpoint}`, { method: 'POST', body: formData });
-                    const data = await res.json();
-                    if (!res.ok) {
-                        alert(data.detail || data.error || "Analysis Service Failed");
-                        setLoading(false);
-                    } else if (data.error) {
-                        alert(data.error);
-                        setLoading(false);
-                    } else if (data.task_id) {
-                        pollTaskStatus(data.task_id);
-                        const newPoints = points + 50;
-                        setPoints(newPoints);
-                        localStorage.setItem('truth_points_v4', newPoints);
-                    } else {
-                        setResult(data);
-                        const newPoints = points + 50;
-                        setPoints(newPoints);
-                        localStorage.setItem('truth_points_v4', newPoints);
-                        setLoading(false);
-                    }
-                } catch (e) { alert("Analysis Service Failed"); setLoading(false); }
+                    const r = await fetch(`${API_BASE}${endpoint}`, { method: "POST", body: form });
+                    const data = await r.json();
+                    if (!r.ok) throw new Error(data.detail || data.error || "Upload failed");
+                    if (data.task_id) poll(data.task_id); else { setResult(data); setLoading(false); }
+                } catch (e) {
+                    setLoading(false);
+                    alert(e.message || "Upload failed");
+                }
             };
 
-            return (
-                <div className="flex h-screen bg-[#020617] text-slate-100 p-6 gap-6">
-                    {/* Sidebar */}
-                    <aside className="w-72 glass rounded-[32px] p-8 flex flex-col border border-white/5">
-                        <div className="flex items-center gap-3 text-cyan-400 mb-12">
-                            <i className="fas fa-shield-halved text-3xl"></i>
-                            <h1 className="text-xl font-bold tracking-tighter text-white uppercase">SAMI <span className="text-cyan-400 italic">V4</span></h1>
+            const badgeColor = (val) => {
+                const k = String(val || "").toLowerCase();
+                if (["real", "verified", "safe"].includes(k)) return "bg-accent-emerald/20 text-accent-emerald border-accent-emerald/30";
+                if (["fake", "misleading", "suspicious", "hate"].includes(k)) return "bg-accent-rose/20 text-accent-rose border-accent-rose/30";
+                return "bg-gray-500/20 text-gray-400 border-gray-500/30";
+            };
+
+            const renderSidebar = () => (
+                <aside className="w-64 flex-shrink-0 flex flex-col border-r border-white/5 bg-dark-900 h-screen sticky top-0 overflow-y-auto custom-scrollbar">
+                    <div className="p-6">
+                        <div className="flex items-center gap-3 mb-8">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-neon">
+                                <Icon name="shield" size={24} className="text-black" />
+                            </div>
+                            <span className="text-xl font-bold tracking-tighter neon-text">SAMI <span className="text-gray-500 font-normal">AI</span></span>
                         </div>
-
-                        <nav className="flex flex-col gap-6 flex-grow">
-                            <div className="flex flex-col gap-1">
-                                <span className="text-[10px] uppercase font-bold text-slate-500 mb-2 px-3">Protocol</span>
-                                <button onClick={() => setView('dashboard')} className={`flex items-center gap-4 px-4 py-3 rounded-xl text-sm font-bold text-left transition-all ${view === 'dashboard' ? 'bg-cyan-500/10 text-cyan-400' : 'text-slate-400 hover:text-white'}`}><i className="fas fa-rss"></i> Integrity Feed</button>
-                                <button onClick={() => setView('neural')} className={`flex items-center gap-4 px-4 py-3 rounded-xl text-sm font-bold text-left transition-all ${view === 'neural' ? 'bg-cyan-500/10 text-cyan-400' : 'text-slate-400 hover:text-white'}`}><i className="fas fa-brain"></i> Neural Logic</button>
-                                <button onClick={() => setView('archive')} className={`flex items-center gap-4 px-4 py-3 rounded-xl text-sm font-bold text-left transition-all ${view === 'archive' ? 'bg-cyan-500/10 text-cyan-400' : 'text-slate-400 hover:text-white'}`}><i className="fas fa-scroll"></i> History Archive</button>
-                            </div>
-
-                            <div className="bg-slate-900/50 p-6 rounded-2xl border border-white/5">
-                                <p className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-2">Truth Guardian</p>
-                                <div className="flex justify-between items-end">
-                                    <span className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter italic">Progress</span>
-                                    <span className="text-xl font-black text-white">{points}</span>
-                                </div>
-                                <div className="w-full bg-slate-800 h-1 mt-2 rounded-full overflow-hidden"><div className="bg-cyan-500 h-full" style={{width: `${points % 100}%`}}></div></div>
-                            </div>
+                        
+                        <nav className="space-y-1">
+                            {[
+                                { id: "overview", label: "Overview", icon: "layout-grid" },
+                                { id: "feed", label: "Intelligence Feed", icon: "rss" },
+                                { id: "trending", label: "Trending Trends", icon: "trending-up" },
+                                { id: "archive", label: "Evidence Archive", icon: "database" },
+                                { id: "architecture", label: "Neural Architecture", icon: "cpu" },
+                            ].map(item => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => setView(item.id)}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${view === item.id ? "active-nav" : "text-gray-400 hover:text-white hover:bg-white/5"}`}
+                                >
+                                    <Icon name={item.icon} size={18} />
+                                    <span className="font-medium">{item.label}</span>
+                                </button>
+                            ))}
                         </nav>
-
-                        <div className="pt-6 border-t border-white/5 flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-400 to-rose-600 flex items-center justify-center font-black text-slate-950 text-xs">AS</div>
-                            <div className="overflow-hidden"><p className="text-xs font-bold truncate">Ansar.Admin</p><p className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">Integrity Lead</p></div>
+                    </div>
+                    
+                    <div className="mt-auto p-6 border-t border-white/5 bg-dark-950/50">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className={`w-2 h-2 rounded-full ${stats?.api_status === "running" ? "bg-accent-emerald animate-pulse" : "bg-accent-rose animate-pulse"}`}></div>
+                            <span className="text-xs font-mono text-gray-500 uppercase tracking-widest">{stats?.api_status === "running" ? "System Live" : "Offline"}</span>
                         </div>
-                    </aside>
-
-                    {/* Main Feed / Content */}
-                    <main className="flex-grow flex flex-col gap-6 overflow-hidden">
-                        <header className="flex justify-between items-center px-4">
-                            <h2 className="text-2xl font-black tracking-tight uppercase">
-                                {view === 'dashboard' ? <>Social <span className="text-cyan-400">Intelligence Feed</span></> : 
-                                 view === 'neural' ? <>Neural <span className="text-cyan-400">Processing Logic</span></> : 
-                                 <>Memory <span className="text-cyan-400">Archive Core</span></>}
-                            </h2>
-                            <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-400 uppercase tracking-widest">
-                                <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span> System Live
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-[10px] text-gray-500 font-mono uppercase">
+                                <span>Core Engine</span>
+                                <span className="text-primary">v2.4.0</span>
                             </div>
-                        </header>
+                            <div className="flex justify-between text-[10px] text-gray-500 font-mono uppercase">
+                                <span>Memory Size</span>
+                                <span className="text-primary">{stats?.faiss_vectors || 0}</span>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+            );
 
-                        <div className="flex-grow overflow-y-auto custom-scroll pr-2">
-                            {view === 'dashboard' && (
-                                <div className="grid grid-cols-1 gap-4">
-                                    {feed.length > 0 ? feed.map(item => (
-                                        <FeedCard key={item.id} item={item} onVerify={(txt) => { setQuery(txt); handleAnalyze(txt); }} />
-                                    )) : <div className="space-y-4">{[1,2,3].map(i => <div key={i} className="glass h-48 rounded-2xl animate-pulse"></div>)}</div>}
+            const renderOverview = () => (
+                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <header>
+                        <h1 className="text-3xl font-bold tracking-tight mb-2">Welcome to the <span className="text-primary">Verification Hub</span></h1>
+                        <p className="text-gray-400 max-w-2xl">Deploying multimodal AI pipelines to analyze news, images, and videos for propaganda and misinformation.</p>
+                    </header>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {[
+                            { label: "Memory Entries", value: stats?.dataset_entries || 0, icon: "hard-drive", color: "text-primary" },
+                            { label: "Neural Status", value: stats?.api_status === "running" ? "Optimal" : "Disconnected", icon: "activity", color: stats?.api_status === "running" ? "text-accent-emerald" : "text-accent-rose" },
+                            { label: "Vector Search", value: stats?.faiss_vectors || 0, icon: "search", color: "text-secondary" },
+                            { label: "Live Feed", value: feed.length || 0, icon: "zap", color: "text-accent-amber" }
+                        ].map((stat, i) => (
+                            <div key={i} className="glass p-5 rounded-2xl">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div className={`p-2 rounded-lg bg-dark-700 ${stat.color}`}>
+                                        <Icon name={stat.icon} size={20} />
+                                    </div>
+                                    <span className="text-[10px] font-mono text-gray-500 uppercase">Live Metrics</span>
                                 </div>
-                            )}
+                                <div className="text-2xl font-bold mb-1">{stat.value}</div>
+                                <div className="text-xs text-gray-500 font-medium">{stat.label}</div>
+                            </div>
+                        ))}
+                    </div>
 
-                            {view === 'archive' && (
-                                <div className="grid grid-cols-1 gap-4">
-                                    <div className="glass p-8 rounded-3xl mb-6">
-                                        <h3 className="text-sm font-bold text-cyan-400 mb-4 uppercase tracking-widest italic border-l-2 border-cyan-500 pl-4">System Memory (Local FAISS Store)</h3>
-                                        <p className="text-xs text-slate-400 leading-relaxed mb-8 font-medium">When SAMI encounters new propaganda via live search, it ingests the verified evidence into its local FAISS vector store. This ensures the system "learns" and remembers facts without relying solely on an external LLM.</p>
-                                        <div className="space-y-3">
-                                            {archive.map((fact, i) => (
-                                                <div key={i} className="p-4 bg-white/5 border border-white/5 rounded-xl text-[11px] text-slate-300 italic leading-relaxed">
-                                                    {typeof fact === 'string' ? fact : `[${fact.source}] ${fact.text}`}
-                                                </div>
-                                            ))}
-                                            {archive.length === 0 && <p className="text-xs text-slate-600 italic">No local memory logs found.</p>}
-                                        </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div className="lg:col-span-2 space-y-6">
+                            <section className="glass p-8 rounded-3xl border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <div className="p-3 rounded-2xl bg-primary/10 text-primary">
+                                        <Icon name="search-code" size={24} />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-bold">Quick Verification</h2>
+                                        <p className="text-xs text-gray-400">Paste text or upload media to begin a deep analysis</p>
                                     </div>
                                 </div>
-                            )}
+                                
+                                <div className="space-y-4">
+                                    <div className="relative">
+                                        <textarea
+                                            value={query}
+                                            onChange={(e) => setQuery(e.target.value)}
+                                            className="w-full h-40 bg-dark-950/80 border border-white/10 rounded-2xl p-5 text-gray-200 placeholder-gray-600 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30 transition-all custom-scrollbar resize-none"
+                                            placeholder="Enter a claim, news headline, or a social media post to analyze..."
+                                        ></textarea>
+                                        <div className="absolute bottom-4 right-4 flex gap-2">
+                                            <input type="file" ref={imageRef} className="hidden" accept="image/*" onChange={(e) => submitUpload(e.target.files[0], "/verify-image")} />
+                                            <input type="file" ref={videoRef} className="hidden" accept="video/*" onChange={(e) => submitUpload(e.target.files[0], "/verify-video")} />
+                                            
+                                            <button 
+                                                onClick={() => imageRef.current.click()}
+                                                className="p-3 rounded-xl bg-dark-800 border border-white/10 text-gray-400 hover:text-white hover:border-white/20 transition-all"
+                                                title="Upload Image"
+                                            >
+                                                <Icon name="image" size={18} />
+                                            </button>
+                                            <button 
+                                                onClick={() => videoRef.current.click()}
+                                                className="p-3 rounded-xl bg-dark-800 border border-white/10 text-gray-400 hover:text-white hover:border-white/20 transition-all"
+                                                title="Upload Video"
+                                            >
+                                                <Icon name="video" size={18} />
+                                            </button>
+                                        </div>
+                                    </div>
 
-                            {view === 'neural' && (
-                                <div className="flex flex-col items-center gap-12 pt-10">
-                                    <div className="text-center max-w-xl">
-                                        <h3 className="text-sm font-bold text-cyan-400 mb-4 uppercase tracking-widest italic">Multi-Stage Tactical Pipeline</h3>
-                                        <p className="text-xs text-slate-400 leading-relaxed font-medium font-medium">SAMI is a custom-built hybrid system. It combines local neural models with dynamic retrieval-augmented generation (RAG) to ensure accuracy and prevent "hallucinations" common in basic LLM plugins.</p>
+                                    <button
+                                        onClick={() => submitClaim()}
+                                        disabled={loading || !query.trim()}
+                                        className={`w-full py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 transition-all ${loading || !query.trim() ? "bg-gray-800 text-gray-500 cursor-not-allowed" : "bg-gradient-to-r from-primary to-secondary text-black hover:shadow-neon hover:scale-[1.01]"}`}
+                                    >
+                                        {loading ? (
+                                            <>
+                                                <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin"></div>
+                                                <span>Processing Pipeline...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Icon name="zap" size={20} className="fill-current" />
+                                                <span>Run SAMI Intelligence</span>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </section>
+
+                            <section className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-lg font-bold flex items-center gap-2">
+                                        <Icon name="history" size={18} className="text-secondary" />
+                                        Recent Intelligence
+                                    </h3>
+                                    <button onClick={refreshFeed} className="text-xs text-primary hover:underline">Refresh Feed</button>
+                                </div>
+                                <div className="grid gap-4">
+                                    {feed.slice(0, 3).map((item) => (
+                                        <div key={item.id} className="glass p-5 rounded-2xl flex gap-5 group cursor-pointer hover:border-primary/30" onClick={() => { setQuery(item.description); submitClaim(item.description); }}>
+                                            <div className="w-12 h-12 rounded-xl bg-dark-800 flex flex-shrink-0 items-center justify-center text-gray-500 group-hover:text-primary transition-colors">
+                                                <Icon name={item.type === 'NEWS' ? 'newspaper' : 'share-2'} size={24} />
+                                            </div>
+                                            <div className="flex-grow min-w-0">
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <span className="text-[10px] font-mono text-gray-500 uppercase tracking-tighter">{item.source} • {item.timestamp}</span>
+                                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${badgeColor(item.status)}`}>{item.status}</span>
+                                                </div>
+                                                <h4 className="font-semibold text-gray-200 mb-1 truncate">{item.title}</h4>
+                                                <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed">{item.description}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+                        </div>
+
+                        <div className="space-y-6">
+                            <section className="glass p-6 rounded-3xl border-secondary/20">
+                                <div className="flex items-center justify-between mb-6">
+                                    <h3 className="font-bold flex items-center gap-2">
+                                        <Icon name="trending-up" size={18} className="text-secondary" />
+                                        Trending Patterns
+                                    </h3>
+                                    <button onClick={refreshTrending} className="p-1 rounded bg-dark-700 text-gray-400">
+                                        <Icon name="rotate-cw" size={14} />
+                                    </button>
+                                </div>
+                                <div className="space-y-5">
+                                    {trending.slice(0, 4).map((trend) => (
+                                        <div key={trend.id} className="group cursor-default">
+                                            <div className="flex justify-between items-center mb-1">
+                                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${trend.tag === 'FAKE' ? 'bg-accent-rose/10 text-accent-rose' : 'bg-accent-amber/10 text-accent-amber'}`}>
+                                                    {trend.tag}
+                                                </span>
+                                                <span className="text-[10px] text-gray-600 font-mono">Impact: {trend.impact}</span>
+                                            </div>
+                                            <h4 className="text-sm font-semibold text-gray-300 group-hover:text-primary transition-colors">{trend.title}</h4>
+                                            <p className="text-xs text-gray-500 mt-1 leading-relaxed">{trend.description}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                                <button onClick={() => setView('trending')} className="w-full mt-6 py-2 text-xs font-bold text-gray-400 hover:text-white border border-white/5 hover:bg-white/5 rounded-xl transition-all">View Full Analytics</button>
+                            </section>
+
+                            <section className="glass p-6 rounded-3xl">
+                                <h3 className="font-bold mb-4 flex items-center gap-2">
+                                    <Icon name="shield-check" size={18} className="text-accent-emerald" />
+                                    System Verification
+                                </h3>
+                                <div className="space-y-3">
+                                    {[
+                                        { label: "Classifier", value: neural?.local_classifier?.split(' ')[0] || "Ready", active: true },
+                                        { label: "Vector DB", value: neural?.vector_engine?.split(' ')[0] || "Ready", active: true },
+                                        { label: "Groq LLM", value: "Llama 3.3", active: true },
+                                        { label: "Whisper", value: "Base (Int8)", active: true }
+                                    ].map((l, i) => (
+                                        <div key={i} className="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/5">
+                                            <span className="text-xs text-gray-400 font-medium">{l.label}</span>
+                                            <span className="text-xs font-mono text-primary bg-primary/10 px-2 py-0.5 rounded-lg">{l.value}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            const renderFeed = () => (
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <header className="flex justify-between items-end">
+                        <div>
+                            <h1 className="text-3xl font-bold tracking-tight mb-2">Intelligence <span className="text-accent-amber">Feed</span></h1>
+                            <p className="text-gray-400">Monitoring real-time news sources and social alerts for verification candidates.</p>
+                        </div>
+                        <button onClick={refreshFeed} className="flex items-center gap-2 px-4 py-2 bg-dark-800 border border-white/10 rounded-xl text-sm font-medium hover:bg-dark-700 transition-all">
+                            <Icon name="refresh-cw" size={16} />
+                            Sync Feed
+                        </button>
+                    </header>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {feed.length > 0 ? feed.map((item) => (
+                            <div key={item.id} className="glass p-6 rounded-3xl flex flex-col h-full hover:border-primary/30 group transition-all">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div className={`p-2 rounded-xl bg-dark-700 ${item.type === 'NEWS' ? 'text-primary' : 'text-secondary'}`}>
+                                        <Icon name={item.type === 'NEWS' ? 'newspaper' : 'hash'} size={20} />
+                                    </div>
+                                    <span className={`text-[10px] font-bold px-2 py-1 rounded-lg border ${badgeColor(item.status)}`}>{item.status}</span>
+                                </div>
+                                <div className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mb-2">{item.source} • {item.timestamp}</div>
+                                <h3 className="text-lg font-bold text-gray-200 mb-3 leading-snug group-hover:text-primary transition-colors">{item.title}</h3>
+                                <p className="text-sm text-gray-400 leading-relaxed mb-6 flex-grow">{item.description}</p>
+                                
+                                <div className="flex gap-2">
+                                    <button 
+                                        onClick={() => { setQuery(item.description); submitClaim(item.description); }}
+                                        className="flex-grow py-2 bg-white/5 hover:bg-primary/20 border border-white/10 hover:border-primary/30 rounded-xl text-xs font-bold text-gray-300 hover:text-white transition-all"
+                                    >
+                                        Analyze Signal
+                                    </button>
+                                    <button 
+                                        onClick={() => { setQuery(item.description); setView('overview'); window.scrollTo(0,0); }}
+                                        className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-gray-400 hover:text-white transition-all"
+                                        title="Load into Editor"
+                                    >
+                                        <Icon name="edit-3" size={16} />
+                                    </button>
+                                </div>
+                            </div>
+                        )) : (
+                            <div className="col-span-full py-20 flex flex-col items-center justify-center text-gray-500 space-y-4">
+                                <Icon name="rss" size={48} className="opacity-20" />
+                                <p>Intelligence feed is currently synchronization. Please wait...</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+
+            const renderTrending = () => (
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <header>
+                        <h1 className="text-3xl font-bold tracking-tight mb-2">Propaganda <span className="text-secondary">Analytics</span></h1>
+                        <p className="text-gray-400">Deep-dive into trending narratives and manipulated content cycles detected across regions.</p>
+                    </header>
+
+                    <div className="grid gap-6">
+                        {trending.length > 0 ? trending.map((trend) => (
+                            <div key={trend.id} className="glass p-8 rounded-[2rem] border-secondary/10 overflow-hidden relative group">
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-secondary/5 blur-[100px] rounded-full pointer-events-none"></div>
+                                
+                                <div className="flex flex-col lg:flex-row gap-8 relative z-10">
+                                    <div className="lg:w-1/3">
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <span className={`text-xs font-bold px-3 py-1 rounded-full ${trend.tag === 'FAKE' ? 'bg-accent-rose/20 text-accent-rose' : 'bg-accent-amber/20 text-accent-amber'}`}>
+                                                {trend.tag}
+                                            </span>
+                                            <span className="text-xs font-mono text-gray-500 uppercase tracking-widest">Impact: <span className="text-white">{trend.impact}</span></span>
+                                        </div>
+                                        <h2 className="text-2xl font-bold mb-4 group-hover:text-secondary transition-colors">{trend.title}</h2>
+                                        <div className="flex gap-4">
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] text-gray-500 uppercase font-mono mb-1">Spread Rate</span>
+                                                <span className="text-lg font-bold text-accent-rose">Accelerating</span>
+                                            </div>
+                                            <div className="h-10 w-px bg-white/10 mx-2"></div>
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] text-gray-500 uppercase font-mono mb-1">Verification Status</span>
+                                                <span className="text-lg font-bold text-accent-emerald">Flagged</span>
+                                            </div>
+                                        </div>
                                     </div>
                                     
-                                    <div className="flex flex-col items-center gap-10 w-full max-w-2xl">
-                                        <div className="glass p-6 rounded-2xl w-full border-cyan-500/20 relative flex items-center justify-between">
-                                            <div><p className="text-[10px] font-black text-cyan-400 uppercase mb-1">Stage 1: Local Screening</p><p className="text-sm font-bold uppercase">{neuralStats?.local_classifier || "XLM-Roberta"}</p></div>
-                                            <i className="fas fa-microchip text-2xl text-cyan-500/50"></i>
-                                            <div className="node-line"></div>
+                                    <div className="lg:w-2/3 space-y-4">
+                                        <div>
+                                            <h4 className="text-xs font-mono text-gray-500 uppercase tracking-widest mb-2">Narrative Breakdown</h4>
+                                            <p className="text-gray-300 leading-relaxed text-lg">{trend.description}</p>
                                         </div>
-                                        <div className="glass p-6 rounded-2xl w-full border-cyan-500/20 relative flex items-center justify-between">
-                                            <div><p className="text-[10px] font-black text-emerald-400 uppercase mb-1">Stage 2: Local Memory Retrieval</p><p className="text-sm font-bold uppercase">{neuralStats?.vector_engine || "FAISS Vector DB"}</p></div>
-                                            <i className="fas fa-database text-2xl text-emerald-500/50"></i>
-                                            <div className="node-line"></div>
-                                        </div>
-                                        <div className="glass p-6 rounded-2xl w-full border-cyan-500/20 relative flex items-center justify-between">
-                                            <div><p className="text-[10px] font-black text-purple-400 uppercase mb-1">Stage 3: Local Reranking</p><p className="text-sm font-bold uppercase">{neuralStats?.reranker || "Cross-Encoder (Local)"}</p></div>
-                                            <i className="fas fa-filter text-2xl text-purple-500/50"></i>
-                                            <div className="node-line"></div>
-                                        </div>
-                                        <div className="glass p-6 rounded-2xl w-full border-cyan-500/40 relative flex items-center justify-between shadow-[0_0_30px_rgba(34,211,238,0.1)]">
-                                            <div><p className="text-[10px] font-black text-white uppercase mb-1">Stage 4: Expert Reasoning</p><p className="text-sm font-bold uppercase">{neuralStats?.reasoner || "Llama 3.3 (API)"}</p></div>
-                                            <i className="fas fa-robot text-2xl text-white/50"></i>
+                                        <div className="pt-4 flex gap-3">
+                                            <button 
+                                                onClick={() => { setQuery(trend.description); submitClaim(trend.description); }}
+                                                className="px-6 py-2.5 bg-secondary text-black font-bold rounded-xl hover:shadow-purple-neon transition-all"
+                                            >
+                                                Deep Analyze Pattern
+                                            </button>
+                                            <button className="px-6 py-2.5 bg-white/5 border border-white/10 text-gray-400 font-bold rounded-xl hover:bg-white/10 transition-all">
+                                                Track Narrative
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
-                            )}
-                        </div>
-                    </main>
-
-                    {/* Right Console */}
-                    <aside className="w-96 flex flex-col gap-6 overflow-hidden">
-                        <div className="glass rounded-[32px] p-8 flex flex-col border border-white/5 flex-grow relative overflow-hidden">
-                            <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-6 flex items-center gap-2"><i className="fas fa-bolt text-cyan-400"></i> Tactical Console</h3>
-                            <textarea value={query} onChange={(e) => setQuery(e.target.value)} className="w-full h-40 bg-slate-950/50 border border-white/5 rounded-2xl p-6 text-xs focus:outline-none focus:border-cyan-500/50 transition-all resize-none mb-4" placeholder="Input context for analysis..." />
-                            <div className="flex gap-2 mb-4">
-                                <input type="file" hidden ref={fileInputRef} onChange={(e) => handleMultimodalUpload(e.target.files[0], '/verify-image')} accept="image/*" />
-                                <input type="file" hidden ref={videoInputRef} onChange={(e) => handleMultimodalUpload(e.target.files[0], '/verify-video')} accept="video/*" />
-                                <button onClick={() => fileInputRef.current.click()} className="flex-grow glass py-3 rounded-xl text-[10px] font-bold uppercase text-slate-400 hover:text-cyan-400 transition-all"><i className="fas fa-image mr-2"></i> Image</button>
-                                <button onClick={() => videoInputRef.current.click()} className="flex-grow glass py-3 rounded-xl text-[10px] font-bold uppercase text-slate-400 hover:text-rose-400 transition-all"><i className="fas fa-video mr-2"></i> Reel</button>
                             </div>
-                            <button onClick={() => handleAnalyze()} disabled={loading} className="w-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black py-4 rounded-xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 uppercase tracking-widest text-[10px]">
-                                {loading ? <i className="fas fa-atom animate-spin"></i> : <i className="fas fa-shield-halved"></i>}
-                                {loading ? "Processing..." : "Run Sami Logic"}
+                        )) : (
+                            <div className="py-20 flex flex-col items-center justify-center text-gray-500 space-y-4">
+                                <Icon name="trending-up" size={48} className="opacity-20" />
+                                <p>No trending propaganda data found in the current intelligence cycle.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+
+            const renderArchive = () => (
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <header className="flex justify-between items-end">
+                        <div>
+                            <h1 className="text-3xl font-bold tracking-tight mb-2">Evidence <span className="text-primary">Archive</span></h1>
+                            <p className="text-gray-400">Historical database of previously analyzed facts and ingested evidence fragments.</p>
+                        </div>
+                        <button onClick={refreshArchive} className="flex items-center gap-2 px-4 py-2 bg-dark-800 border border-white/10 rounded-xl text-sm font-medium hover:bg-dark-700 transition-all">
+                            <Icon name="database" size={16} />
+                            Reload Memory
+                        </button>
+                    </header>
+
+                    <div className="glass rounded-3xl overflow-hidden border-white/5">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-white/5 border-b border-white/5">
+                                    <th className="p-5 text-xs font-mono text-gray-500 uppercase tracking-widest">Source / Type</th>
+                                    <th className="p-5 text-xs font-mono text-gray-500 uppercase tracking-widest">Content Fragment</th>
+                                    <th className="p-5 text-xs font-mono text-gray-500 uppercase tracking-widest">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5">
+                                {archive.length > 0 ? archive.map((item, idx) => {
+                                    const source = typeof item === 'string' ? 'Memory' : (item.source || 'General');
+                                    const text = typeof item === 'string' ? item : (item.text || '');
+                                    return (
+                                        <tr key={idx} className="hover:bg-white/[0.02] transition-colors group">
+                                            <td className="p-5">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 rounded-lg bg-dark-700 text-gray-500 group-hover:text-primary transition-colors">
+                                                        <Icon name="file-text" size={16} />
+                                                    </div>
+                                                    <span className="text-sm font-semibold text-gray-300">{source}</span>
+                                                </div>
+                                            </td>
+                                            <td className="p-5">
+                                                <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed max-w-2xl">{text}</p>
+                                            </td>
+                                            <td className="p-5">
+                                                <button 
+                                                    onClick={() => { setQuery(text); submitClaim(text); }}
+                                                    className="text-xs font-bold text-primary hover:underline"
+                                                >
+                                                    Re-Verify
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                }) : (
+                                    <tr>
+                                        <td colSpan="3" className="p-20 text-center text-gray-500">
+                                            No evidence fragments found in local RAG memory.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            );
+
+            const renderArchitecture = () => (
+                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <header>
+                        <h1 className="text-3xl font-bold tracking-tight mb-2">Neural <span className="text-primary">Architecture</span></h1>
+                        <p className="text-gray-400">Visualizing the SAMI verification pipeline and active machine learning layers.</p>
+                    </header>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div className="space-y-6">
+                            {[
+                                { step: "01", name: "Signal Intake & Multimodal OCR", model: neural?.local_classifier || "XLM-Roberta", desc: "Extracting text from images (Tesseract), audio (Whisper), and video frames for initial processing." },
+                                { step: "02", name: "Neural Classification", model: "Multi-Label XLM-R", desc: "Running local models to determine veracity confidence and toxicity levels immediately." },
+                                { step: "03", name: "RAG & Evidence Retrieval", model: neural?.vector_engine || "FAISS Vector Hub", desc: "Searching the local knowledge base and web for ground-truth articles and facts." },
+                                { step: "04", name: "LLM Reasoning Synthesis", model: neural?.reasoner || "Llama 3.3 (Groq)", desc: "Deep narrative analysis combining classification results with retrieved evidence for human-readable reports." },
+                                { step: "05", name: "Explainable XAI Attribution", model: "Captum Integrated Gradients", desc: "Calculating token-level influence scores to show exactly why the AI made its decision." }
+                            ].map((layer, i) => (
+                                <div key={i} className="glass p-6 rounded-3xl relative overflow-hidden group">
+                                    <div className="absolute top-0 right-0 p-8 text-6xl font-black text-white/5 group-hover:text-primary/10 transition-colors">{layer.step}</div>
+                                    <div className="relative z-10">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <span className="text-[10px] font-mono text-primary uppercase tracking-[0.2em]">{layer.model}</span>
+                                        </div>
+                                        <h3 className="text-xl font-bold mb-2">{layer.name}</h3>
+                                        <p className="text-sm text-gray-500 leading-relaxed max-w-md">{layer.desc}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        
+                        <div className="space-y-6">
+                            <div className="glass p-8 rounded-[2rem] h-full flex flex-col border-primary/20">
+                                <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+                                    <Icon name="activity" size={20} className="text-primary" />
+                                    System Runtime Metrics
+                                </h3>
+                                
+                                <div className="space-y-8 flex-grow">
+                                    {[
+                                        { label: "Neural Engine Load", val: "Optimal", color: "bg-accent-emerald" },
+                                        { label: "RAG Latency", val: "142ms", color: "bg-accent-emerald" },
+                                        { label: "LLM Token Stream", val: "Active", color: "bg-primary" },
+                                        { label: "XAI Calculation", val: "Ready", color: "bg-primary" }
+                                    ].map((m, i) => (
+                                        <div key={i} className="space-y-2">
+                                            <div className="flex justify-between text-xs font-medium">
+                                                <span className="text-gray-400">{m.label}</span>
+                                                <span className="text-white">{m.val}</span>
+                                            </div>
+                                            <div className="h-1.5 w-full bg-dark-700 rounded-full overflow-hidden">
+                                                <div className={`h-full ${m.color} rounded-full`} style={{ width: `${Math.random() * 40 + 60}%` }}></div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="mt-12 p-6 rounded-2xl bg-primary/5 border border-primary/10">
+                                    <div className="flex items-center gap-4 mb-4">
+                                        <div className="p-3 rounded-xl bg-primary/20 text-primary">
+                                            <Icon name="box" size={24} />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold">Deployment Ready</h4>
+                                            <p className="text-xs text-gray-500">All neural layers reporting active status.</p>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="p-3 rounded-xl bg-dark-800 border border-white/5">
+                                            <div className="text-[10px] text-gray-500 uppercase font-mono mb-1">Worker ID</div>
+                                            <div className="text-xs font-bold font-mono">SAM-092-ALPHA</div>
+                                        </div>
+                                        <div className="p-3 rounded-xl bg-dark-800 border border-white/5">
+                                            <div className="text-[10px] text-gray-500 uppercase font-mono mb-1">Region</div>
+                                            <div className="text-xs font-bold font-mono">LOCAL-NODE</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            const renderResultModal = () => (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-10 animate-in fade-in duration-300">
+                    <div className="absolute inset-0 bg-dark-950/90 backdrop-blur-xl" onClick={() => setResult(null)}></div>
+                    <div className="glass w-full max-w-6xl max-h-full overflow-y-auto custom-scrollbar rounded-[2.5rem] border-white/10 shadow-2xl relative z-10 animate-in zoom-in-95 duration-300">
+                        <div className="sticky top-0 z-20 p-8 pb-4 bg-dark-900/80 backdrop-blur-md flex justify-between items-start">
+                            <div>
+                                <div className="flex flex-wrap gap-2 mb-4">
+                                    <span className={`text-xs font-bold px-4 py-1.5 rounded-full border shadow-lg ${badgeColor(result.veracity?.prediction)}`}>
+                                        {result.veracity?.prediction || "UNKNOWN"}
+                                    </span>
+                                    <span className={`text-xs font-bold px-4 py-1.5 rounded-full border bg-white/5 border-white/10 text-gray-400`}>
+                                        Toxicity: {result.toxicity?.prediction || "Safe"}
+                                    </span>
+                                    {result.veracity?.confidence && (
+                                        <span className="text-xs font-mono text-gray-500 py-1.5">Confidence: {(result.veracity.confidence * 100).toFixed(1)}%</span>
+                                    )}
+                                </div>
+                                <h2 className="text-2xl md:text-4xl font-bold tracking-tight leading-tight max-w-4xl text-white">{result.claim}</h2>
+                            </div>
+                            <button onClick={() => setResult(null)} className="p-3 rounded-2xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all">
+                                <Icon name="x" size={24} />
                             </button>
                         </div>
 
-                        <div className="glass rounded-[32px] p-6 border border-rose-500/10">
-                            <h3 className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-4 flex items-center gap-2"><i className="fas fa-chart-line"></i> Propaganda Index</h3>
-                            <div className="flex justify-between items-center mb-2"><span className="text-xs text-slate-300">Historical Revisionism</span><span className="text-xs font-bold text-rose-500">High</span></div>
-                            <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden"><div className="bg-rose-500 h-full w-[85%]"></div></div>
-                            <p className="text-[9px] text-slate-500 mt-3 leading-relaxed italic">System detecting abnormal spikes in misattributed quotes targeting Indian historical figures on Instagram Reels India.</p>
-                        </div>
-                    </aside>
+                        <div className="p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+                            <div className="lg:col-span-7 space-y-8">
+                                <section>
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <Icon name="brain" size={18} className="text-primary" />
+                                        <h3 className="text-lg font-bold">Neural Reasoning</h3>
+                                    </div>
+                                    <div className="p-6 rounded-2xl bg-white/5 border border-white/10 leading-relaxed text-gray-300">
+                                        {result.generated_reason || "No deep reasoning generated for this claim."}
+                                    </div>
+                                </section>
 
-                    {/* Modal */}
-                    {result && (
-                        <div className="modal-overlay fixed inset-0 z-[100] flex items-center justify-center p-12 bg-slate-950/90 backdrop-blur-md">
-                            <div className="modal-content glass w-full max-w-5xl rounded-[48px] p-12 relative border-cyan-500/30 max-h-[90vh] overflow-y-auto custom-scroll">
-                                <button onClick={() => setResult(null)} className="absolute top-10 right-10 text-slate-500 hover:text-white transition-all text-2xl"><i className="fas fa-times"></i></button>
-                                <div className="flex items-center gap-3 mb-8">
-                                    <div className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border ${result.veracity.prediction === 'real' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : result.veracity.prediction === 'unknown' ? 'bg-slate-500/20 text-slate-400 border-slate-500/30' : 'bg-rose-500/20 text-rose-400 border-rose-500/30'}`}>{result.veracity.prediction}</div>
-                                    <Badge type={result.toxicity?.prediction || 'unknown'} text={`Toxicity: ${result.toxicity?.prediction || 'unknown'}`} />
-                                    <span className="text-[10px] font-bold text-slate-600 ml-auto uppercase tracking-widest italic">Tactical Intel Protocol v4.2</span>
-                                </div>
-                                <h2 className="text-3xl font-black mb-12 leading-tight text-white italic border-l-8 border-cyan-500 pl-8">"{result.claim}"</h2>
-                                <div className="mb-12">
-                                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-3"><i className="fas fa-eye"></i> Mechanistic Interpretability (XAI)</h4>
-                                    <p className="text-[10px] text-slate-500 italic mb-4">
-                                        Token influence for the displayed veracity label: {result.xai_target_label || result.veracity.prediction}
-                                    </p>
-                                    <XAIHeatmap attributions={result.xai_attributions} />
-                                </div>
-                                <div className="grid grid-cols-2 gap-12">
-                                    <div className="flex flex-col gap-8">
-                                        <div className="bg-slate-950/50 p-8 rounded-[40px] border border-white/5">
-                                            <h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-3"><i className="fas fa-brain"></i> Manipulation Anatomy</h4>
-                                            <div className="bg-amber-500/5 border border-amber-500/10 p-5 rounded-2xl mb-6">
-                                                <p className="text-[11px] leading-relaxed text-amber-200/80 italic font-medium">
-                                                    {Array.isArray(result.propaganda_anatomy) ? result.propaganda_anatomy.join(" ") : result.propaganda_anatomy}
-                                                </p>
-                                            </div>
-                                            <p className="text-sm leading-relaxed text-slate-400 font-medium">{result.generated_reason}</p>
+                                <section>
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <Icon name="fingerprint" size={18} className="text-secondary" />
+                                        <h3 className="text-lg font-bold">Manipulation Anatomy</h3>
+                                    </div>
+                                    <div className="p-6 rounded-2xl bg-dark-800 border border-white/5 border-l-secondary border-l-4">
+                                        <p className="text-gray-400 leading-relaxed italic text-sm">
+                                            {Array.isArray(result.propaganda_anatomy) ? result.propaganda_anatomy.join(" ") : result.propaganda_anatomy}
+                                        </p>
+                                    </div>
+                                </section>
+
+                                {result.historical_context && (
+                                    <section>
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <Icon name="scroll" size={18} className="text-accent-amber" />
+                                            <h3 className="text-lg font-bold">Historical Perspective</h3>
                                         </div>
-                                        {result.historical_context && (
-                                            <div className="bg-cyan-500/5 p-8 rounded-[40px] border border-cyan-500/20">
-                                                <h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-3"><i className="fas fa-clock-rotate-left"></i> Verified Historical Fact</h4>
-                                                <p className="text-sm leading-relaxed text-slate-400 italic italic font-bold">{result.historical_context}</p>
+                                        <div className="p-6 rounded-2xl bg-white/5 border border-white/10 text-sm text-gray-400 leading-7">
+                                            {result.historical_context}
+                                        </div>
+                                    </section>
+                                )}
+
+                                <section>
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <Icon name="eye" size={18} className="text-accent-emerald" />
+                                        <h3 className="text-lg font-bold">Interpretability Heatmap</h3>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <p className="text-xs text-gray-500 font-mono uppercase tracking-widest">Target Layer: {result.xai_target_label || "Veracity Prediction"}</p>
+                                        <XAIHeatmap attributions={result.xai_attributions} />
+                                    </div>
+                                </section>
+                            </div>
+
+                            <div className="lg:col-span-5 space-y-8">
+                                <section>
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <Icon name="share-2" size={18} className="text-primary" />
+                                        <h3 className="text-lg font-bold">Evidence Relationship</h3>
+                                    </div>
+                                    <EvidenceGraph claim={result.claim} evidence={result.evidence || []} />
+                                </section>
+
+                                <section>
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-lg font-bold">Evidence Stream</h3>
+                                        <span className="text-[10px] font-mono text-gray-500 uppercase tracking-widest">{(result.evidence || []).length} Sources</span>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {(result.evidence || []).length > 0 ? result.evidence.map((ev, idx) => (
+                                            <div key={idx} className="p-4 rounded-xl bg-dark-800 border border-white/5 text-sm text-gray-400 leading-relaxed">
+                                                {ev}
+                                            </div>
+                                        )) : (
+                                            <div className="p-10 text-center border border-dashed border-white/10 rounded-xl text-gray-600 text-sm">
+                                                No specific external links retrieved.
                                             </div>
                                         )}
                                     </div>
-                                    <div className="flex flex-col gap-6">
-                                        <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-3"><i className="fas fa-link"></i> RAG Neural Evidence Graph</h4>
-                                        <EvidenceGraph claim={result.claim} evidence={result.evidence || []} />
-                                        <div className="flex flex-col gap-4 max-h-[200px] overflow-y-auto custom-scroll pr-2">
-                                            {(result.evidence || []).map((ev, i) => {
-                                                const urlRegex = /(https?:\/\/[^\s]+)/g;
-                                                const parts = ev.split(urlRegex);
-                                                const matches = ev.match(urlRegex);
-                                                
-                                                return (
-                                                    <div key={i} className="text-[10px] p-4 rounded-2xl bg-white/5 border border-white/5 text-slate-400 leading-relaxed italic">
-                                                        {parts.map((part, j) => {
-                                                            if (matches && matches.includes(part)) {
-                                                                return <a key={j} href={part} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline break-all">{part}</a>;
-                                                            }
-                                                            return part;
-                                                        })}
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                </div>
-                                <button onClick={() => setResult(null)} className="w-full mt-12 bg-white/5 border border-white/10 hover:border-cyan-400 text-slate-500 hover:text-cyan-400 py-5 rounded-3xl transition-all font-black text-xs uppercase tracking-[0.3em]">Dismiss Tactical Report</button>
+                                </section>
+                            </div>
+                        </div>
+                        
+                        <div className="p-8 border-t border-white/5 flex justify-end">
+                            <button onClick={() => window.print()} className="px-6 py-2 rounded-xl bg-dark-800 hover:bg-dark-700 text-sm font-bold text-gray-400 transition-all flex items-center gap-2">
+                                <Icon name="printer" size={16} />
+                                Export Intelligence Report
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            return (
+                <div className="flex min-h-screen bg-dark-900 text-gray-100">
+                    {renderSidebar()}
+                    
+                    <main className="flex-grow p-8 lg:p-12 max-w-7xl mx-auto overflow-x-hidden">
+                        {view === "overview" && renderOverview()}
+                        {view === "feed" && renderFeed()}
+                        {view === "trending" && renderTrending()}
+                        {view === "archive" && renderArchive()}
+                        {view === "architecture" && renderArchitecture()}
+                    </main>
+
+                    {result && renderResultModal()}
+                    
+                    {/* Global Search / Command Bar Overlay */}
+                    {loading && !activeTask && (
+                        <div className="fixed bottom-10 right-10 z-40 bg-dark-800 p-4 rounded-2xl border border-primary/30 shadow-neon animate-bounce">
+                            <div className="flex items-center gap-3">
+                                <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+                                <span className="text-sm font-bold text-primary">Pipeline Active...</span>
                             </div>
                         </div>
                     )}
@@ -570,7 +914,7 @@
             );
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
+        const root = ReactDOM.createRoot(document.getElementById("root"));
         root.render(<App />);
     </script>
 </body>

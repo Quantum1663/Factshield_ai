@@ -23,6 +23,7 @@ from utils.vector_updater import add_new_evidence
 
 from fastapi import FastAPI, File, UploadFile, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import faiss
 import json
@@ -54,6 +55,8 @@ whisper_model = WhisperModel("base", device=WHISPER_DEVICE, compute_type=WHISPER
 
 DATA_DIR = BASE_DIR / "data"
 TASK_DB_PATH = DATA_DIR / "tasks.db"
+FRONTEND_DIR = BASE_DIR.parent / "frontend"
+FRONTEND_INDEX = FRONTEND_DIR / "index.html"
 
 # Setup app
 app = FastAPI(title="SAMI: Social Integrity System")
@@ -383,3 +386,10 @@ def system_status():
         "faiss_vectors": index_size,
         "api_status": "running"
     }
+
+
+@app.get("/", include_in_schema=False)
+def serve_frontend():
+    if not FRONTEND_INDEX.exists():
+        raise HTTPException(status_code=404, detail="Frontend entrypoint not found.")
+    return FileResponse(FRONTEND_INDEX)
