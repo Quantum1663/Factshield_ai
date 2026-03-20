@@ -70,10 +70,13 @@ load_dotenv(BASE_DIR.parent / ".env")
 # Core logic imports - MUST stay after load_dotenv
 from models.classifier import classify
 from models.interpretability import explain_prediction
+from models.vision import analyze_image_with_vlm
 from rag.retrieval import retrieve_fact
 from utils.live_search import search_news
 from utils.web_scraper import scrape_article
 from utils.vector_updater import add_new_evidence
+from utils.c2pa_checker import verify_c2pa_metadata
+from utils.claim_graph import build_claim_graph
 
 from fastapi import FastAPI, File, UploadFile, BackgroundTasks, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -109,8 +112,10 @@ whisper_model = WhisperModel("base", device=WHISPER_DEVICE, compute_type=WHISPER
 
 DATA_DIR = BASE_DIR / "data"
 TASK_DB_PATH = DATA_DIR / "tasks.db"
-FRONTEND_DIR = BASE_DIR.parent / "frontend"
-FRONTEND_INDEX = FRONTEND_DIR / "index.html"
+LEGACY_FRONTEND_DIR = BASE_DIR.parent / "frontend"
+LEGACY_FRONTEND_INDEX = LEGACY_FRONTEND_DIR / "index.html"
+FRONTEND_V3_DIR = BASE_DIR.parent / "frontend-v3"
+FRONTEND_V3_EXPORT_DIR = FRONTEND_V3_DIR / "out"
 
 # Setup app
 app = FastAPI(title="SAMI: Social Integrity System")
@@ -125,6 +130,52 @@ app.add_middleware(
 
 class NewsRequest(BaseModel):
     text: str
+
+
+def get_dataset_size() -> int:
+    meta_path = DATA_DIR / "fact_metadata.json"
+    if not meta_path.exists():
+        return 0
+    with open(meta_path, "r", encoding="utf-8") as f:
+        metadata = json.load(f)
+    return len(metadata)
+
+
+def get_vector_count() -> int:
+    index_path = DATA_DIR / "fact_index.faiss"
+    if not index_path.exists():
+        return 0
+    index = faiss.read_index(str(index_path))
+    return index.ntotal
+
+
+def get_frontend_root() -> Path:
+    if FRONTEND_V3_EXPORT_DIR.exists():
+        return FRONTEND_V3_EXPORT_DIR
+    return LEGACY_FRONTEND_DIR
+
+
+def resolve_frontend_asset(request_path: str) -> Path | None:
+    frontend_root = get_frontend_root()
+    normalized = request_path.strip("/")
+
+    if not normalized:
+        index_path = frontend_root / "index.html"
+        return index_path if index_path.exists() else None
+
+    candidate = frontend_root / normalized
+    if candidate.is_file():
+        return candidate
+
+    nested_index = candidate / "index.html"
+    if nested_index.exists():
+        return nested_index
+
+    html_candidate = frontend_root / f"{normalized}.html"
+    if html_candidate.exists():
+        return html_candidate
+
+    return None
 
 
 def init_task_db():
@@ -198,19 +249,23 @@ def resolve_label_and_confidence(base_prediction: dict, analysis_label):
 
 init_task_db()
 
-def run_verification_task(task_id: str, text: str):
+def run_verification_task(task_id: str, text: str, vlm_context: str = None, c2pa_data: dict = None):
     """Background worker to run the heavy ML pipeline with caching."""
     logger.info(f"--- STARTING TASK {task_id} ---")
     try:
-        cached = result_cache.get(text)
-        if cached:
-            save_task(task_id, "completed", result=cached)
-            logger.info(f"--- TASK {task_id} served from cache ---")
-            return
+        # Cache key should incorporate vlm and c2pa if we want to be perfectly accurate,
+        # but for hackathon scope, we keep it simple or just skip cache for complex multimodal
+        if not vlm_context and not c2pa_data:
+            cached = result_cache.get(text)
+            if cached:
+                save_task(task_id, "completed", result=cached)
+                logger.info(f"--- TASK {task_id} served from cache ---")
+                return
 
         save_task(task_id, "processing")
-        data = process_full_verification(text)
-        result_cache.put(text, data)
+        data = process_full_verification(text, vlm_context, c2pa_data)
+        if not vlm_context and not c2pa_data:
+            result_cache.put(text, data)
         save_task(task_id, "completed", result=data)
     except Exception as e:
         import traceback
@@ -231,28 +286,34 @@ async def verify_news(request: NewsRequest, background_tasks: BackgroundTasks, r
 
 @app.post("/verify-image")
 async def verify_image(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
-    if not TESSERACT_AVAILABLE:
-        raise HTTPException(status_code=503, detail="OCR Engine (Tesseract) is not installed on this server.")
-
     validate_uploaded_file(file, "image/")
     contents = await file.read()
+    
+    # 1. C2PA Provenance Check
+    c2pa_data = verify_c2pa_metadata(contents)
+    logger.info(f"C2PA Check: {c2pa_data}")
+
     try:
         image = Image.open(io.BytesIO(contents))
+        image.verify() # Ensure it's a valid image
     except UnidentifiedImageError as exc:
         raise HTTPException(status_code=400, detail="Uploaded file is not a valid image.") from exc
     
+    # 2. VLM Context Extraction
     try:
-        extracted_text = pytesseract.image_to_string(image).strip()
+        vlm_context = analyze_image_with_vlm(contents)
+        logger.info(f"VLM Analysis complete. Length: {len(vlm_context)}")
     except Exception as e:
-        logger.error(f"OCR Failed: {e}")
-        raise HTTPException(status_code=500, detail="Failed to extract text from image.")
+        logger.error(f"VLM Analysis Failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to analyze image context.")
 
-    if not extracted_text:
-        raise HTTPException(status_code=400, detail="No text detected in image.")
+    if not vlm_context or "failed" in vlm_context.lower():
+        raise HTTPException(status_code=400, detail="Failed to extract context from image.")
         
     task_id = str(uuid.uuid4())
     save_task(task_id, "pending")
-    background_tasks.add_task(run_verification_task, task_id, extracted_text)
+    # For image, the VLM context serves as both the text claim and the visual context
+    background_tasks.add_task(run_verification_task, task_id, vlm_context, vlm_context, c2pa_data)
     return {"task_id": task_id, "status": "processing"}
 
 @app.get("/task-status/{task_id}")
@@ -262,7 +323,7 @@ async def get_task_status(task_id: str):
         return {"status": "failed", "error": "Task not found"}
     return task
 
-def process_full_verification(text):
+def process_full_verification(text, vlm_context=None, c2pa_data=None):
     logger.info(f"Step 1: Classifying text...")
     prediction = classify(text)
     
@@ -281,7 +342,7 @@ def process_full_verification(text):
 
     logger.info(f"Step 4: LLM Analysis...")
     from models.reasoning import analyze_claim_with_llm
-    analysis = analyze_claim_with_llm(text, evidence)
+    analysis = analyze_claim_with_llm(text, evidence, vlm_context=vlm_context, c2pa_data=c2pa_data)
 
     veracity_label, veracity_confidence = resolve_label_and_confidence(
         prediction["veracity"], analysis.get("veracity")
@@ -297,8 +358,16 @@ def process_full_verification(text):
         logger.error(f"XAI Calculation Failed: {e}")
         xai_attributions = []
 
+    knowledge_graph = build_claim_graph(
+        text,
+        evidence,
+        evidence_citations=analysis.get("evidence_citations", []),
+        graph_relations=analysis.get("graph_relations", []),
+    )
+
     return {
         "claim": text,
+        "verdict": analysis.get("verdict", "Neutral"),
         "veracity": {
             "prediction": veracity_label,
             "confidence": veracity_confidence
@@ -308,9 +377,28 @@ def process_full_verification(text):
             "confidence": toxicity_confidence
         },
         "propaganda_anatomy": analysis.get("propaganda_anatomy", "No manipulation anatomy detected."),
+        "detected_fallacies": analysis.get("detected_fallacies", []),
+        "c2pa_verification": c2pa_data if c2pa_data else {"is_verified": False, "details": "No C2PA checked or found."},
+        "provenance_signals": {
+            "has_visual_context": bool(vlm_context),
+            "visual_context_excerpt": vlm_context[:280] if vlm_context else None,
+            "source_mode": "multimodal" if vlm_context else "text",
+            "evidence_count": len(evidence),
+            "c2pa_available": bool(c2pa_data),
+            "trusted_origin": bool(c2pa_data and c2pa_data.get("is_verified")),
+        },
+        "debate_trace": analysis.get("debate_trace", {
+            "bias_analyst": "",
+            "prosecutor": "",
+            "defense": "",
+            "judge": analysis.get("reason"),
+        }),
+        "evidence_citations": analysis.get("evidence_citations", []),
+        "graph_relations": analysis.get("graph_relations", []),
         "generated_reason": analysis.get("reason"),
         "historical_context": analysis.get("historical_context"),
         "evidence": evidence,
+        "knowledge_graph": knowledge_graph,
         "xai_attributions": xai_attributions,
         "xai_target_label": veracity_label
     }
@@ -332,6 +420,11 @@ async def verify_video(background_tasks: BackgroundTasks, file: UploadFile = Fil
 
     validate_uploaded_file(file, "video/")
     
+    # 1. C2PA Provenance Check
+    contents = await file.read()
+    c2pa_data = verify_c2pa_metadata(contents, file_extension=".mp4")
+    logger.info(f"C2PA Check (Video): {c2pa_data}")
+
     # Create temporary file for video
     temp_dir = Path(tempfile.gettempdir())
     video_filename = f"{uuid.uuid4()}.mp4"
@@ -340,7 +433,7 @@ async def verify_video(background_tasks: BackgroundTasks, file: UploadFile = Fil
 
     try:
         with open(video_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+            buffer.write(contents)
 
         # --- Step 1: Video OCR Extraction ---
         cap = cv2.VideoCapture(str(video_path))
@@ -384,7 +477,7 @@ async def verify_video(background_tasks: BackgroundTasks, file: UploadFile = Fil
         # --- Step 4: Background Task handoff ---
         task_id = str(uuid.uuid4())
         save_task(task_id, "pending")
-        background_tasks.add_task(run_verification_task, task_id, full_context)
+        background_tasks.add_task(run_verification_task, task_id, full_context, None, c2pa_data)
         return {"task_id": task_id, "status": "processing"}
 
     except Exception as e:
@@ -417,31 +510,31 @@ def get_archive():
 
 @app.get("/neural-stats")
 def get_neural_stats():
+    dataset_size = get_dataset_size()
+    vector_count = get_vector_count()
+    has_model = (BASE_DIR / "factshield_model").exists()
+    llm_configured = bool(os.getenv("GROQ_API_KEY"))
+    pipeline_ready = has_model and llm_configured and vector_count >= 0
+
     return {
-        "local_classifier": "XLm-Roberta (Active)",
+        "local_classifier": "XLM-Roberta" if has_model else "XLM-Roberta (Missing Model)",
         "vector_engine": "FAISS L2-Flat",
-        "memory_count": 0,
+        "memory_count": dataset_size,
+        "vector_count": vector_count,
+        "cache_entries": len(result_cache._cache),
+        "rate_limit_per_minute": rate_limiter._max,
         "reranker": "Cross-Encoder MiniLM",
         "reasoner": "Llama 3.3 (via Groq)",
-        "status": "Optimal"
+        "ocr_available": TESSERACT_AVAILABLE,
+        "video_support": VideoFileClip is not None,
+        "groq_configured": llm_configured,
+        "status": "Optimal" if pipeline_ready else "Degraded"
     }
 
 @app.get("/system-status")
 def system_status():
-    index_path = DATA_DIR / "fact_index.faiss"
-    meta_path = DATA_DIR / "fact_metadata.json"
-
-    dataset_size = 0
-    index_size = 0
-
-    if meta_path.exists():
-        with open(meta_path, "r", encoding="utf-8") as f:
-            metadata = json.load(f)
-            dataset_size = len(metadata)
-
-    if index_path.exists():
-        index = faiss.read_index(str(index_path))
-        index_size = index.ntotal
+    dataset_size = get_dataset_size()
+    index_size = get_vector_count()
 
     return {
         "system": "SAMI AI",
@@ -451,9 +544,20 @@ def system_status():
         "api_status": "running"
     }
 
-
 @app.get("/", include_in_schema=False)
 def serve_frontend():
-    if not FRONTEND_INDEX.exists():
+    frontend_index = resolve_frontend_asset("")
+    if frontend_index is None:
         raise HTTPException(status_code=404, detail="Frontend entrypoint not found.")
-    return FileResponse(FRONTEND_INDEX)
+    return FileResponse(frontend_index)
+
+
+@app.get("/{full_path:path}", include_in_schema=False)
+def serve_frontend_assets(full_path: str):
+    asset_path = resolve_frontend_asset(full_path)
+    if asset_path is None:
+        frontend_index = resolve_frontend_asset("")
+        if frontend_index is None:
+            raise HTTPException(status_code=404, detail="Frontend asset not found.")
+        return FileResponse(frontend_index)
+    return FileResponse(asset_path)

@@ -1,7 +1,6 @@
 """Tests for RAG retrieval and vector store."""
 import pytest
 from rag.retrieval import retrieve_fact
-from rag.vector_store import search_vectors
 
 
 def test_retrieve_fact_returns_list():

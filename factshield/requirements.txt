@@ -31,3 +31,4 @@ moviepy
 captum
 pytest
 httpx
+c2pa-python
