@@ -33,6 +33,39 @@ function truncate(text: string, max: number) {
   return text.length > max ? `${text.slice(0, max - 3)}...` : text;
 }
 
+function wrapEvidenceLabel(text: string, maxLineLength = 26, maxLines = 3) {
+  const words = truncate(text, maxLineLength * maxLines).split(/\s+/);
+  const lines: string[] = [];
+  let currentLine = "";
+
+  for (const word of words) {
+    const candidate = currentLine ? `${currentLine} ${word}` : word;
+    if (candidate.length <= maxLineLength) {
+      currentLine = candidate;
+      continue;
+    }
+
+    if (currentLine) {
+      lines.push(currentLine);
+    }
+    currentLine = word;
+
+    if (lines.length === maxLines - 1) {
+      break;
+    }
+  }
+
+  if (currentLine && lines.length < maxLines) {
+    lines.push(currentLine);
+  }
+
+  if (lines.length === maxLines && words.join(" ").length > lines.join(" ").length) {
+    lines[lines.length - 1] = truncate(lines[lines.length - 1], maxLineLength - 3) + "...";
+  }
+
+  return lines.join("\n");
+}
+
 export function EvidenceGraph({ graph }: EvidenceGraphProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [details, setDetails] = useState<GraphDetails>(null);
@@ -77,13 +110,16 @@ export function EvidenceGraph({ graph }: EvidenceGraphProps) {
       const nodes = filteredGraph.nodes.map((node) => {
         const style = NODE_STYLES[node.group] || NODE_STYLES.topic;
         const isEvidence = node.kind === "evidence";
+        const level = node.kind === "claim" ? 0 : node.kind === "entity" ? 1 : 2;
         return {
           id: node.id,
-          label: isEvidence ? truncate(node.label, 56) : node.label,
-          shape: isEvidence ? "box" : "dot",
-          size: isEvidence ? 20 : node.size,
+          label: isEvidence ? wrapEvidenceLabel(node.label) : truncate(node.label, 30),
+          shape: isEvidence ? "box" : "ellipse",
+          size: isEvidence ? 18 : Math.max(18, node.size - 2),
           margin: isEvidence ? { top: 12, right: 12, bottom: 12, left: 12 } : undefined,
-          widthConstraint: isEvidence ? { maximum: 220 } : undefined,
+          widthConstraint: isEvidence ? { maximum: 240 } : { maximum: 150 },
+          heightConstraint: isEvidence ? { minimum: 64 } : undefined,
+          level,
           color: {
             background: style.background,
             border: style.border,
@@ -91,9 +127,9 @@ export function EvidenceGraph({ graph }: EvidenceGraphProps) {
           },
           font: {
             color: style.font,
-            size: isEvidence ? 13 : 15,
+            size: isEvidence ? 12 : 14,
             face: "Segoe UI",
-            multi: "html",
+            multi: "false",
           },
         };
       });
@@ -106,16 +142,12 @@ export function EvidenceGraph({ graph }: EvidenceGraphProps) {
           id: edgeId,
           from: edge.from,
           to: edge.to,
-          label: edge.label.toUpperCase(),
           font: {
-            size: 11,
+            size: 10,
             align: "top",
             strokeWidth: 3,
             strokeColor: "#ffffff",
             color: style.highlight,
-            bold: {
-              color: style.highlight,
-            },
           },
           color: {
             color: style.color,
@@ -124,7 +156,11 @@ export function EvidenceGraph({ graph }: EvidenceGraphProps) {
           dashes: style.dashes,
           width: Math.max(2, (edge.weight ?? 0.5) * 6),
           arrows: edge.relation === "mentions" ? undefined : "to",
-          smooth: false,
+          smooth: {
+            enabled: true,
+            type: "cubicBezier",
+            roundness: 0.38,
+          },
         };
       });
 
@@ -146,9 +182,12 @@ export function EvidenceGraph({ graph }: EvidenceGraphProps) {
               enabled: true,
               direction: "LR",
               sortMethod: "directed",
-              levelSeparation: 180,
-              nodeSpacing: 170,
-              treeSpacing: 220,
+              levelSeparation: 220,
+              nodeSpacing: 210,
+              treeSpacing: 260,
+              blockShifting: true,
+              edgeMinimization: true,
+              parentCentralization: true,
             },
           },
           nodes: {
@@ -161,7 +200,11 @@ export function EvidenceGraph({ graph }: EvidenceGraphProps) {
               y: 8,
             },
           },
-          edges: { shadow: false },
+          edges: {
+            shadow: false,
+            selectionWidth: 1,
+            hoverWidth: 0.5,
+          },
         }
       );
 
@@ -215,7 +258,7 @@ export function EvidenceGraph({ graph }: EvidenceGraphProps) {
   }
 
   return (
-    <div className="h-full rounded-2xl border border-slate-200 bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.08),_transparent_45%),linear-gradient(180deg,_rgba(255,255,255,0.95),_rgba(248,250,252,0.95))] p-3">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.08),_transparent_45%),linear-gradient(180deg,_rgba(255,255,255,0.95),_rgba(248,250,252,0.95))] p-3">
       <div className="mb-2 flex flex-wrap gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
         <span>{graph.summary.entity_count} entities detected</span>
         <span>Showing top 6 entities</span>
@@ -230,8 +273,8 @@ export function EvidenceGraph({ graph }: EvidenceGraphProps) {
         <span className="rounded-full bg-blue-50 px-2 py-1 text-blue-700">Place</span>
         <span className="rounded-full bg-fuchsia-50 px-2 py-1 text-fuchsia-700">Topic</span>
       </div>
-      <div ref={containerRef} className="h-[320px] w-full rounded-xl" />
-      <div className="mt-3 rounded-xl border border-slate-200 bg-white/80 p-3">
+      <div ref={containerRef} className="min-h-0 flex-1 overflow-hidden rounded-xl" />
+      <div className="mt-3 shrink-0 rounded-xl border border-slate-200 bg-white/80 p-3">
         <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Selected Detail</div>
         {details ? (
           <>
@@ -240,7 +283,7 @@ export function EvidenceGraph({ graph }: EvidenceGraphProps) {
           </>
         ) : (
           <div className="mt-1 text-sm text-slate-500">
-            Read left to right: claim {"->"} entities {"->"} evidence. Click any node or edge to inspect it.
+            Read left to right: claim {"->"} entities {"->"} evidence. Edge type is shown by color and line style. Click any node or edge to inspect it.
           </div>
         )}
       </div>

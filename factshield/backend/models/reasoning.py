@@ -7,6 +7,39 @@ from groq import Groq
 logger = logging.getLogger(__name__)
 
 
+def _extract_retry_after(error_text: str) -> str | None:
+    match = re.search(r"Please try again in ([^\.]+\.\d+s|[^\.\n]+)", error_text or "", re.IGNORECASE)
+    if match:
+        return match.group(1).strip()
+    return None
+
+
+def _error_result(message: str, vlm_context=None, c2pa_data=None, safe_evidence=None):
+    return {
+        "llm_status": "error",
+        "verdict": "Neutral",
+        "veracity": "unknown",
+        "toxicity": "unknown",
+        "propaganda_anatomy": message,
+        "detected_fallacies": [],
+        "evidence_citations": [],
+        "graph_relations": [],
+        "reason": f"[ERROR] {message}",
+        "historical_context": None,
+        "debate_trace": {
+            "bias_analyst": "",
+            "prosecutor": "",
+            "defense": "",
+            "judge": f"[ERROR] {message}",
+        },
+        "context_summary": {
+            "has_visual_context": bool(vlm_context),
+            "has_c2pa_data": bool(c2pa_data),
+            "evidence_count": len(safe_evidence or []),
+        }
+    }
+
+
 def get_groq_client():
     """Build a fresh client so reloads or closed transports do not poison later requests."""
     api_key = os.environ.get("GROQ_API_KEY")
@@ -187,33 +220,29 @@ def analyze_claim_with_llm(claim, evidence_list, vlm_context=None, c2pa_data=Non
             "has_c2pa_data": bool(c2pa_data),
             "evidence_count": len(safe_evidence),
         }
+        res["llm_status"] = "ok"
 
         return res
 
     except Exception as e:
-        logger.error(f"Multi-Agent Consensus Error: {e}")
-        return {
-            "verdict": "Neutral",
-            "veracity": "unknown",
-            "toxicity": "unknown",
-            "propaganda_anatomy": "Error: Consensus pipeline failed to reach a verdict.",
-            "detected_fallacies": [],
-            "evidence_citations": [],
-            "graph_relations": [],
-            "reason": "[ERROR] Pipeline Failure.",
-            "historical_context": None,
-            "debate_trace": {
-                "bias_analyst": "",
-                "prosecutor": "",
-                "defense": "",
-                "judge": "[ERROR] Pipeline Failure.",
-            },
-            "context_summary": {
-                "has_visual_context": bool(vlm_context),
-                "has_c2pa_data": bool(c2pa_data),
-                "evidence_count": len(safe_evidence),
-            }
-        }
+        error_text = str(e)
+        logger.error(f"Multi-Agent Consensus Error: {error_text}")
+
+        if "rate_limit" in error_text.lower() or "429" in error_text:
+            retry_after = _extract_retry_after(error_text)
+            message = "Reasoning provider is temporarily rate limited."
+            if retry_after:
+                message = f"{message} Try again in about {retry_after}."
+            result = _error_result(message, vlm_context=vlm_context, c2pa_data=c2pa_data, safe_evidence=safe_evidence)
+            result["llm_status"] = "rate_limited"
+            return result
+
+        return _error_result(
+            "Consensus pipeline failed to reach a verdict.",
+            vlm_context=vlm_context,
+            c2pa_data=c2pa_data,
+            safe_evidence=safe_evidence,
+        )
 
 
 # Legacy stubs for compatibility

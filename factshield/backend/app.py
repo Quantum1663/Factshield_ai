@@ -247,6 +247,38 @@ def resolve_label_and_confidence(base_prediction: dict, analysis_label):
     return resolved_label, resolved_confidence
 
 
+def build_fallback_analysis(prediction: dict, evidence: list[str], analysis: dict) -> dict:
+    veracity_label = prediction["veracity"]["label"]
+    confidence = float(prediction["veracity"]["confidence"])
+    fallback_message = analysis.get("propaganda_anatomy") or "Reasoning provider unavailable. Returned local classifier and retrieval results only."
+
+    if veracity_label == "real":
+        verdict = "Supports"
+    elif veracity_label in {"fake", "misleading"} and evidence:
+        verdict = "Refutes"
+    else:
+        verdict = "Neutral"
+
+    return {
+        "llm_status": analysis.get("llm_status", "error"),
+        "verdict": verdict,
+        "veracity": veracity_label,
+        "toxicity": prediction["toxicity"]["label"],
+        "propaganda_anatomy": fallback_message,
+        "detected_fallacies": [],
+        "evidence_citations": [],
+        "graph_relations": [],
+        "reason": f"[FALLBACK] Local classifier result ({veracity_label}, {confidence:.0%} confidence). Retrieved {len(evidence)} evidence items while the reasoning provider was unavailable.",
+        "historical_context": None,
+        "debate_trace": {
+            "bias_analyst": "",
+            "prosecutor": "",
+            "defense": "",
+            "judge": fallback_message,
+        },
+    }
+
+
 init_task_db()
 
 def run_verification_task(task_id: str, text: str, vlm_context: str = None, c2pa_data: dict = None):
@@ -343,6 +375,9 @@ def process_full_verification(text, vlm_context=None, c2pa_data=None):
     logger.info(f"Step 4: LLM Analysis...")
     from models.reasoning import analyze_claim_with_llm
     analysis = analyze_claim_with_llm(text, evidence, vlm_context=vlm_context, c2pa_data=c2pa_data)
+    if analysis.get("llm_status") != "ok":
+        logger.warning("LLM reasoning unavailable; using classifier/RAG fallback response.")
+        analysis = build_fallback_analysis(prediction, evidence, analysis)
 
     veracity_label, veracity_confidence = resolve_label_and_confidence(
         prediction["veracity"], analysis.get("veracity")
