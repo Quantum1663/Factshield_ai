@@ -400,8 +400,18 @@ def process_full_verification(text, vlm_context=None, c2pa_data=None):
         graph_relations=analysis.get("graph_relations", []),
     )
 
+    if vlm_context:
+        summary_lines = [
+            line.strip(" -*#\"'")
+            for line in vlm_context.splitlines()
+            if line.strip()
+        ]
+        display_claim = summary_lines[0] if summary_lines else text
+    else:
+        display_claim = text
+
     return {
-        "claim": text,
+        "claim": display_claim,
         "verdict": analysis.get("verdict", "Neutral"),
         "veracity": {
             "prediction": veracity_label,
@@ -416,7 +426,7 @@ def process_full_verification(text, vlm_context=None, c2pa_data=None):
         "c2pa_verification": c2pa_data if c2pa_data else {"is_verified": False, "details": "No C2PA checked or found."},
         "provenance_signals": {
             "has_visual_context": bool(vlm_context),
-            "visual_context_excerpt": vlm_context[:280] if vlm_context else None,
+            "visual_context_excerpt": vlm_context if vlm_context else None,
             "source_mode": "multimodal" if vlm_context else "text",
             "evidence_count": len(evidence),
             "c2pa_available": bool(c2pa_data),

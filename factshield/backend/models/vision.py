@@ -1,14 +1,18 @@
 import base64
 import logging
+import os
 from models.reasoning import get_groq_client
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_VISION_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"
+
 def analyze_image_with_vlm(image_bytes: bytes) -> str:
     """
     Analyzes an image using a Vision-Language Model to extract text and describe context.
-    Using Groq's Llama 3.2 Vision preview model.
+    Uses Groq's current vision-capable model.
     """
+    model_name = os.environ.get("GROQ_VISION_MODEL", DEFAULT_VISION_MODEL)
     try:
         client = get_groq_client()
         base64_image = base64.b64encode(image_bytes).decode('utf-8')
@@ -22,7 +26,7 @@ def analyze_image_with_vlm(image_bytes: bytes) -> str:
         """
         
         response = client.chat.completions.create(
-            model="llama-3.2-11b-vision-preview",
+            model=model_name,
             messages=[
                 {
                     "role": "user",
@@ -43,5 +47,5 @@ def analyze_image_with_vlm(image_bytes: bytes) -> str:
         return response.choices[0].message.content
         
     except Exception as e:
-        logger.error(f"VLM Analysis Failed: {e}")
+        logger.error("VLM Analysis Failed with model %s: %s", model_name, e)
         return f"Failed to analyze image with VLM: {str(e)}"

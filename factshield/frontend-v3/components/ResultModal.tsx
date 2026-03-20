@@ -26,6 +26,33 @@ interface Props {
   onClose: () => void;
 }
 
+function cleanModelText(value: string | null | undefined) {
+  if (!value) return "";
+  return value
+    .replace(/\*\*/g, "")
+    .replace(/^[#>\-\s]+/gm, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getDisplayClaim(result: VerificationResult) {
+  const rawClaim = result.claim || "";
+  if (!result.provenance_signals.has_visual_context) {
+    return cleanModelText(rawClaim);
+  }
+
+  const visualContext = result.provenance_signals.visual_context_excerpt || rawClaim;
+  const lines = visualContext
+    .split(/\r?\n/)
+    .map((line) => cleanModelText(line))
+    .filter(Boolean);
+
+  const firstContentLine = lines.find((line) => !/^(visible text|visual context|subjects|setting)\b/i.test(line));
+  const candidate = firstContentLine || lines[0] || cleanModelText(rawClaim) || "Image verification result";
+
+  return candidate.length > 160 ? `${candidate.slice(0, 157).trimEnd()}...` : candidate;
+}
+
 function getStatusColor(value: string) {
   const key = value.toLowerCase();
   if (["real", "verified", "safe", "supports"].includes(key)) {
@@ -81,6 +108,8 @@ export function ResultModal({ result, onClose }: Props) {
   if (!result) return null;
 
   const isFallback = result.generated_reason?.includes("[FALLBACK]") || result.generated_reason?.includes("[ERROR]");
+  const displayClaim = getDisplayClaim(result);
+  const visualContextText = result.provenance_signals.visual_context_excerpt || "";
   const veracityConfidence =
     result.veracity.confidence !== null ? `${Math.round(result.veracity.confidence * 100)}%` : "LLM-derived";
   const toxicityConfidence =
@@ -146,7 +175,7 @@ export function ResultModal({ result, onClose }: Props) {
             </div>
 
             <DialogTitle className="max-w-6xl text-[2rem] font-black leading-[1.08] tracking-tight text-slate-950 md:text-[2.35rem]">
-              {result.claim}
+              {displayClaim}
             </DialogTitle>
 
             <p className="mt-4 max-w-4xl text-[1.02rem] leading-8 text-slate-600">
@@ -288,9 +317,15 @@ export function ResultModal({ result, onClose }: Props) {
                           <div className="text-base font-black text-slate-950">
                             {result.provenance_signals.has_visual_context ? "Visual context captured" : "Text-only verification"}
                           </div>
-                          <p className="mt-2 text-sm leading-7 text-slate-600">
-                            {result.provenance_signals.visual_context_excerpt || "No image or video context was needed for this claim."}
-                          </p>
+                          {result.provenance_signals.has_visual_context ? (
+                            <div className="mt-2 max-h-72 overflow-y-auto rounded-xl border border-slate-200 bg-white/80 p-3 text-sm leading-7 whitespace-pre-wrap text-slate-600">
+                              {visualContextText}
+                            </div>
+                          ) : (
+                            <p className="mt-2 text-sm leading-7 text-slate-600">
+                              No image or video context was needed for this claim.
+                            </p>
+                          )}
                         </div>
                       </div>
                     </Panel>
