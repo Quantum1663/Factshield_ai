@@ -131,7 +131,14 @@ def analyze_claim_with_llm(claim, evidence_list, vlm_context=None, c2pa_data=Non
         3. Propaganda Anatomy: A detailed paragraph explicitly explaining how specific words in the claim execute manipulation tactics.
         4. Detected Fallacies: Extract a list of the main logical fallacies identified (e.g., ["Strawman", "Appeal to Emotion"]).
         5. Evidence Citations: Select up to 3 strongest evidence items by index from the textual evidence list and label each as supports, refutes, or mentions with a confidence from 0.0 to 1.0.
-        6. Graph Relations: List up to 6 entity or claim relation hints in short text form (e.g. "Claim refutes Evidence[1]" or "Entity: Amit Shah mentions Evidence[0]").
+        6. Graph Relations: List up to 6 graph hints using ONLY these exact formats:
+           - "Claim supports Evidence[0]"
+           - "Claim refutes Evidence[1]"
+           - "Claim mentions Evidence[2]"
+           - "Entity: Amit Shah supports Evidence[0]"
+           - "Entity: Amit Shah refutes Evidence[1]"
+           - "Entity: Amit Shah mentions Evidence[2]"
+           Do not mention prosecutors, judges, arguments, or any source other than Claim / Entity and Evidence[index].
         7. Explanation: Provide a concise, one-sentence explanation for the final verdict.
 
         Respond ONLY with a valid JSON object matching this schema:

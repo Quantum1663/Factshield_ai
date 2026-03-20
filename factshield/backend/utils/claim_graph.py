@@ -162,7 +162,10 @@ def build_claim_graph(claim: str, evidence: list[str], evidence_citations: list[
                 "weight": confidence,
             })
 
-    relation_pattern = re.compile(r"(claim|entity:\s*[^ ]+)\s+(mentions|supports|refutes)\s+evidence\[(\d+)\]", re.IGNORECASE)
+    relation_pattern = re.compile(
+        r"(claim|entity:\s*.+?)\s+(mentions|supports|refutes)\s+evidence\[(\d+)\]",
+        re.IGNORECASE,
+    )
     for relation_hint in graph_relations or []:
         match = relation_pattern.search(relation_hint)
         if not match:
