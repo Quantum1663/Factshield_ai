@@ -38,7 +38,8 @@ function cleanModelText(value: string | null | undefined) {
 function getDisplayClaim(result: VerificationResult) {
   const rawClaim = result.claim || "";
   if (!result.provenance_signals.has_visual_context) {
-    return cleanModelText(rawClaim);
+    const cleanedClaim = cleanModelText(rawClaim);
+    return cleanedClaim.length > 160 ? `${cleanedClaim.slice(0, 157).trimEnd()}...` : cleanedClaim;
   }
 
   const visualContext = result.provenance_signals.visual_context_excerpt || rawClaim;
@@ -48,7 +49,7 @@ function getDisplayClaim(result: VerificationResult) {
     .filter(Boolean);
 
   const firstContentLine = lines.find((line) => !/^(visible text|visual context|subjects|setting)\b/i.test(line));
-  const candidate = firstContentLine || lines[0] || cleanModelText(rawClaim) || "Image verification result";
+  const candidate = firstContentLine || lines[0] || cleanModelText(rawClaim) || "Media verification result";
 
   return candidate.length > 160 ? `${candidate.slice(0, 157).trimEnd()}...` : candidate;
 }
@@ -204,7 +205,7 @@ export function ResultModal({ result, onClose }: Props) {
                       {result.veracity.prediction.toUpperCase()}
                     </Badge>
                   </div>
-                  <div className="line-clamp-1 text-sm font-bold text-slate-900">{result.claim}</div>
+                  <div className="line-clamp-1 text-sm font-bold text-slate-900">{displayClaim}</div>
                 </div>
                 <button
                   type="button"

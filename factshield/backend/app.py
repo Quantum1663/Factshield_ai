@@ -474,7 +474,7 @@ async def verify_video(background_tasks: BackgroundTasks, file: UploadFile = Fil
     temp_dir = Path(tempfile.gettempdir())
     video_filename = f"{uuid.uuid4()}.mp4"
     video_path = temp_dir / video_filename
-    audio_path = temp_dir / video_filename.with_suffix(".mp3").name
+    audio_path = video_path.with_suffix(".mp3")
 
     try:
         with open(video_path, "wb") as buffer:
@@ -522,7 +522,7 @@ async def verify_video(background_tasks: BackgroundTasks, file: UploadFile = Fil
         # --- Step 4: Background Task handoff ---
         task_id = str(uuid.uuid4())
         save_task(task_id, "pending")
-        background_tasks.add_task(run_verification_task, task_id, full_context, None, c2pa_data)
+        background_tasks.add_task(run_verification_task, task_id, full_context, full_context, c2pa_data)
         return {"task_id": task_id, "status": "processing"}
 
     except Exception as e:
