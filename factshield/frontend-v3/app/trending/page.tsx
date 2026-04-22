@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { getTrending, TrendingItem } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, Activity, Share2, BarChart3 } from "lucide-react";
+import { TrendingUp, Activity, Share2, BarChart3, AlertTriangle, Zap } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function TrendingPage() {
   const [trending, setTrending] = useState<TrendingItem[]>([]);
@@ -14,58 +15,91 @@ export default function TrendingPage() {
   }, []);
 
   return (
-    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="flex items-end justify-between">
+    <div className="space-y-12 pb-20">
+      <motion.div 
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="flex items-end justify-between"
+      >
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Trending Narratives</h1>
-          <p className="text-slate-500 font-medium mt-1">High-impact misinformation patterns currently circulating through the news-graph.</p>
+          <h1 className="text-4xl font-black tracking-tighter text-white uppercase italic">Trending Narratives</h1>
+          <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">High-impact misinformation patterns detected in news-graph</p>
         </div>
-        <div className="flex items-center gap-2 pb-1">
-          <Badge className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-none px-3 h-7 flex items-center gap-1.5 font-bold uppercase tracking-widest text-[10px]">
-            <Activity className="w-3 h-3" /> Real-time Tracking Active
-          </Badge>
+        <div className="flex items-center gap-2 px-4 py-2 bg-red-500/10 rounded-2xl border border-red-500/20">
+            <Activity className="w-3.5 h-3.5 text-red-400 animate-pulse" />
+            <span className="text-[10px] font-black text-red-400 uppercase tracking-widest">Tracking Active</span>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="space-y-5">
+      <div className="space-y-6">
         {trending.length > 0 ? trending.map((t, i) => (
-          <Card key={i} className="border-slate-200/60 shadow-md hover:shadow-xl hover:border-red-200 transition-all group overflow-hidden bg-white">
-            <CardContent className="p-0 flex">
-              <div className="w-2 bg-red-600 flex-shrink-0" />
-              <div className="p-8 flex-1">
-                <div className="flex items-center gap-3 mb-4">
-                  <Badge className="bg-red-50 text-red-700 border-none px-3 py-1 font-black text-[10px] uppercase tracking-tighter rounded-lg">
-                    {t.tag || "FAKE"}
-                  </Badge>
-                  <span className="text-xs font-bold text-slate-400 font-mono uppercase tracking-widest flex items-center gap-1.5">
-                    Impact Magnitude: <span className="text-red-600">{t.impact || "High"}</span>
-                  </span>
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1 }}
+          >
+            <Card className="glass border-white/5 hover:border-red-500/30 transition-all duration-500 group overflow-hidden rounded-[3rem]">
+                <CardContent className="p-0 flex">
+                <div className="w-3 bg-gradient-to-b from-red-600 to-red-900 flex-shrink-0 opacity-80 group-hover:opacity-100 transition-opacity" />
+                <div className="p-10 flex-1 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-10 opacity-5 rotate-12 scale-150 group-hover:scale-125 transition-transform duration-1000">
+                        <AlertTriangle className="w-32 h-32 text-red-500" />
+                    </div>
+
+                    <div className="flex items-center gap-4 mb-6 relative">
+                    <Badge className="bg-red-500/10 text-red-400 border-red-500/20 px-4 py-1 font-black text-[10px] uppercase tracking-widest rounded-xl">
+                        {t.tag || "MALICIOUS"}
+                    </Badge>
+                    <div className="w-1 h-1 rounded-full bg-white/10" />
+                    <span className="text-[10px] font-black text-white/30 font-mono uppercase tracking-[0.2em] flex items-center gap-2">
+                        Impact Magnitude: <span className="text-red-400 text-glow">{t.impact || "High"}</span>
+                    </span>
+                    </div>
+
+                    <h3 className="text-2xl font-black text-white leading-tight mb-4 group-hover:text-red-400 transition-colors relative">
+                    {t.title}
+                    </h3>
+                    <p className="text-sm text-white/50 font-medium leading-relaxed max-w-4xl mb-8 relative">
+                    {t.description}
+                    </p>
+
+                    <div className="flex flex-wrap items-center gap-8 pt-8 border-t border-white/5 relative">
+                    <div className="flex items-center gap-3 group/stat">
+                        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/5 group-hover/stat:border-violet-500/20 transition-colors">
+                            <BarChart3 className="w-4 h-4 text-white/20 group-hover/stat:text-violet-400 transition-colors" />
+                        </div>
+                        <div>
+                            <div className="text-[9px] font-black text-white/20 uppercase tracking-widest">Resonance</div>
+                            <div className="text-[11px] font-black text-white/70 uppercase">4.2k nodes</div>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3 group/stat">
+                        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/5 group-hover/stat:border-red-500/20 transition-colors">
+                            <Share2 className="w-4 h-4 text-white/20 group-hover/stat:text-red-400 transition-colors" />
+                        </div>
+                        <div>
+                            <div className="text-[9px] font-black text-white/20 uppercase tracking-widest">Velocity</div>
+                            <div className="text-[11px] font-black text-white/70 uppercase">12 posts / min</div>
+                        </div>
+                    </div>
+                    <div className="ml-auto">
+                        <div className="flex items-center gap-2 text-[10px] font-black text-white/20 uppercase tracking-widest italic group-hover:text-red-400/50 transition-colors">
+                            <Zap className="w-3 h-3" />
+                            Counter-narrative suggested
+                        </div>
+                    </div>
+                    </div>
                 </div>
-                <h3 className="text-xl font-black text-slate-900 leading-snug mb-3 group-hover:text-red-600 transition-colors">
-                  {t.title}
-                </h3>
-                <p className="text-sm text-slate-500 font-medium leading-relaxed max-w-4xl mb-6">
-                  {t.description}
-                </p>
-                <div className="flex items-center gap-6 pt-6 border-t border-slate-50">
-                  <div className="flex items-center gap-2">
-                    <BarChart3 className="w-4 h-4 text-slate-400" />
-                    <span className="text-xs font-bold text-slate-600 uppercase">Resonance: 4.2k nodes</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Share2 className="w-4 h-4 text-slate-400" />
-                    <span className="text-xs font-bold text-slate-600 uppercase">Velocity: 12 posts/min</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+            </Card>
+          </motion.div>
         )) : (
-          <div className="py-40 text-center space-y-4">
-            <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-200">
+          <div className="py-48 text-center glass rounded-[3rem] border-dashed border-white/5 border-2">
+            <div className="w-24 h-24 bg-white/5 rounded-[2rem] flex items-center justify-center mx-auto text-white/10 mb-6">
               <TrendingUp className="w-10 h-10" />
             </div>
-            <div className="text-slate-400 font-bold uppercase text-xs tracking-widest">Identifying Propaganda Clusters...</div>
+            <div className="text-white/20 font-black uppercase text-sm tracking-[0.3em] italic">Identifying Propaganda Clusters...</div>
           </div>
         )}
       </div>

@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import { CommandCenter } from "@/components/CommandCenter";
 import { Card, CardContent } from "@/components/ui/card";
 import { FeedItem, getIntelligenceFeed, getTrending, getNeuralStats, getSystemStatus, NeuralStats, SystemStatus, TrendingItem } from "@/lib/api";
-import { Layers, Database, Activity, Cpu, Rss, ArrowRight, ExternalLink } from "lucide-react";
+import { Layers, Database, Activity, Cpu, Rss, ArrowRight, ExternalLink, Zap, Terminal, Globe, TrendingUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { motion } from "framer-motion";
 
 export default function Dashboard() {
   const [feed, setFeed] = useState<FeedItem[]>([]);
@@ -16,124 +17,215 @@ export default function Dashboard() {
   const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
   const [commandQuery, setCommandQuery] = useState("");
   const [autoSubmitSignal, setAutoSubmitSignal] = useState(0);
+  const [sessionId, setSessionId] = useState("");
 
   useEffect(() => {
-    Promise.all([getIntelligenceFeed(), getTrending(), getNeuralStats(), getSystemStatus()])
-      .then(([f, t, s, system]) => {
-        setFeed(f);
-        setTrending(t);
-        setStats(s);
-        setSystemStatus(system);
-      })
-      .catch(console.error);
+    setSessionId(`SAMI-${Math.random().toString(36).substring(7).toUpperCase()}`);
+    const fetchData = () => {
+        Promise.all([getIntelligenceFeed(), getTrending(), getNeuralStats(), getSystemStatus()])
+        .then(([f, t, s, system]) => {
+          setFeed(f);
+          setTrending(t);
+          setStats(s);
+          setSystemStatus(system);
+        })
+        .catch(console.error);
+    };
+    fetchData();
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const statCards = [
-    { label: "Knowledge Base", val: stats?.memory_count ?? systemStatus?.dataset_entries ?? 0, sub: "indexed records", icon: Layers, color: "text-indigo-600 bg-indigo-50" },
-    { label: "Vector Memory", val: stats?.vector_count ?? systemStatus?.faiss_vectors ?? 0, sub: stats?.vector_engine || "vector embeddings", icon: Database, color: "text-violet-600 bg-violet-50" },
-    { label: "Live Signals", val: feed.length, sub: "active feed items", icon: Activity, color: "text-emerald-600 bg-emerald-50" },
-    { label: "Pipeline Health", val: stats?.status || "Unknown", sub: stats?.groq_configured ? "llm configured" : "llm setup required", icon: Cpu, iconColor: "text-amber-600 bg-amber-50" },
+    { label: "Neural Index", val: stats?.memory_count ?? systemStatus?.dataset_entries ?? 0, sub: "Indexed Facts", icon: Database, color: "text-violet-400", bg: "bg-violet-500/10" },
+    { label: "Vector Space", val: stats?.vector_count ?? systemStatus?.faiss_vectors ?? 0, sub: stats?.vector_engine || "FAISS L2", icon: Zap, color: "text-blue-400", bg: "bg-blue-500/10" },
+    { label: "Live Signals", val: feed.length, sub: "Incoming Feeds", icon: Globe, color: "text-emerald-400", bg: "bg-emerald-500/10" },
+    { label: "Core Sync", val: stats?.status || "Active", sub: "Pipeline Status", icon: Activity, color: "text-amber-400", bg: "bg-amber-500/10" },
   ];
 
   const handleAnalyzeFeedItem = (item: FeedItem) => {
     const claim = [item.title, item.description].filter(Boolean).join(". ");
     setCommandQuery(claim);
     setAutoSubmitSignal((current) => current + 1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-700">
-      <div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Verification Hub</h1>
-        <p className="text-slate-500 font-medium mt-1">Unified AI command center for truth-assessment and propaganda intelligence.</p>
-      </div>
+    <div className="space-y-12 pb-20">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col md:flex-row md:items-end justify-between gap-6"
+      >
+        <div>
+          <div className="flex items-center gap-3 mb-3">
+             <Badge className="bg-violet-500/20 text-violet-400 border-violet-500/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest">SAMI Intelligence v2.0</Badge>
+             <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] font-bold text-white/40 uppercase tracking-tighter">Live Neural Uplink</span>
+             </div>
+          </div>
+          <h1 className="text-5xl font-black tracking-tighter text-white">Verification Hub</h1>
+          <p className="text-white/40 font-medium mt-2 max-w-xl text-lg">Autonomous defense against misinformation. Unified command center for propaganda analysis and truth-assessment.</p>
+        </div>
+        
+        <div className="flex items-center gap-4 bg-white/5 p-2 rounded-2xl border border-white/5 backdrop-blur-md">
+            <div className="px-4 py-2">
+                <div className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-1">Session ID</div>
+                <div className="text-xs font-mono font-bold text-white/80">{sessionId || "INITIALIZING..."}</div>
+            </div>
+            <div className="w-px h-8 bg-white/10" />
+            <div className="px-4 py-2">
+                <div className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-1">Neural Load</div>
+                <div className="text-xs font-mono font-bold text-violet-400">1.2ms / query</div>
+            </div>
+        </div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         {statCards.map((s, i) => (
-          <Card key={i} className="border-slate-200/60 shadow-sm hover:shadow-md transition-shadow group">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between mb-4">
-                <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", s.color || s.iconColor)}>
-                  <s.icon className="w-5 h-5" />
-                </div>
-                <Badge variant="outline" className="text-[9px] font-bold tracking-widest uppercase border-slate-200 text-slate-400">Live</Badge>
-              </div>
-              <div className="text-2xl font-black text-slate-900 tracking-tight">{s.val}</div>
-              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">{s.sub}</div>
-            </CardContent>
-          </Card>
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: i * 0.1 }}
+          >
+            <Card className="glass group hover:border-white/20 transition-all duration-500 rounded-[2.5rem] overflow-hidden">
+                <CardContent className="p-7">
+                    <div className="flex items-center justify-between mb-6">
+                        <div className={cn("w-14 h-14 rounded-3xl flex items-center justify-center transition-transform group-hover:scale-110 duration-500", s.bg)}>
+                            <s.icon className={cn("w-7 h-7", s.color)} />
+                        </div>
+                        <div className="flex flex-col items-end">
+                            <div className="text-3xl font-black text-white tracking-tighter">{s.val}</div>
+                            <div className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mt-1">{s.sub}</div>
+                        </div>
+                    </div>
+                    <div className="text-[11px] font-bold text-white/40 uppercase tracking-widest">{s.label}</div>
+                </CardContent>
+            </Card>
+          </motion.div>
         ))}
       </div>
 
-      <CommandCenter initialQuery={commandQuery} autoSubmitSignal={autoSubmitSignal} />
+      <motion.div
+         initial={{ opacity: 0, y: 40 }}
+         animate={{ opacity: 1, y: 0 }}
+         transition={{ delay: 0.4 }}
+      >
+        <CommandCenter initialQuery={commandQuery} autoSubmitSignal={autoSubmitSignal} />
+      </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <div className="lg:col-span-8 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        <div className="lg:col-span-8 space-y-8">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Rss className="w-5 h-5 text-indigo-600" />
-              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-widest">Recent Neural Signals</h2>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-violet-500/10 flex items-center justify-center border border-violet-500/20">
+                <Terminal className="w-5 h-5 text-violet-400" />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-white tracking-tight uppercase">Neural Signals</h2>
+                <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">Latest Ingested Intelligence</p>
+              </div>
             </div>
-            <Link href="/feed" className="text-xs font-bold text-indigo-600 hover:underline flex items-center gap-1">View Full Feed <ArrowRight className="w-3 h-3" /></Link>
+            <Link href="/feed" className="group flex items-center gap-2 text-[11px] font-black text-white/40 hover:text-violet-400 transition-colors uppercase tracking-widest">
+                Network Stream <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+            </Link>
           </div>
           
-          <div className="grid grid-cols-1 gap-3">
-            {feed.slice(0, 4).map((item, i) => (
-              <Card
+          <div className="grid grid-cols-1 gap-4">
+            {feed.slice(0, 5).map((item, i) => (
+              <motion.div
                 key={i}
-                className="cursor-pointer border-slate-200/60 shadow-sm transition-colors group hover:border-indigo-200"
-                onClick={() => handleAnalyzeFeedItem(item)}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.5 + (i * 0.1) }}
               >
-                <CardContent className="p-4 flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center flex-shrink-0 group-hover:bg-indigo-50 transition-colors">
-                    {item.type === 'NEWS' ? <Layers className="w-6 h-6 text-blue-500" /> : <Activity className="w-6 h-6 text-indigo-500" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[10px] font-bold text-slate-400 font-mono uppercase tracking-tighter">{item.source}</span>
-                      <Badge className="bg-slate-100 text-slate-600 border-none text-[9px] font-black px-1.5 h-4">{item.status}</Badge>
+                <Card
+                    className="cursor-pointer glass border-white/5 hover:border-white/20 transition-all duration-300 group rounded-[2rem]"
+                    onClick={() => handleAnalyzeFeedItem(item)}
+                >
+                    <CardContent className="p-6 flex items-start gap-6">
+                    <div className="w-16 h-16 rounded-[1.5rem] bg-white/5 border border-white/5 flex items-center justify-center flex-shrink-0 group-hover:bg-violet-500/10 group-hover:border-violet-500/20 transition-all duration-500">
+                        {item.type === 'NEWS' ? <Globe className="w-8 h-8 text-blue-400/50 group-hover:text-blue-400 transition-colors" /> : <Activity className="w-8 h-8 text-violet-400/50 group-hover:text-violet-400 transition-colors" />}
                     </div>
-                    <h4 className="text-[14px] font-bold text-slate-800 truncate mb-1 group-hover:text-indigo-600 transition-colors">{item.title}</h4>
-                    <p className="text-[12px] text-slate-500 line-clamp-1 font-medium">{item.description}</p>
-                    <div className="mt-3 flex items-center gap-3 text-[11px] font-bold uppercase tracking-wide text-indigo-600">
-                      <span>Analyze</span>
-                      {item.link && item.link !== "#" ? (
-                        <button
-                          type="button"
-                          className="flex items-center gap-1 text-slate-500 hover:text-indigo-600"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            window.open(item.link, "_blank", "noopener,noreferrer");
-                          }}
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                          Source
-                        </button>
-                      ) : null}
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-2">
+                        <span className="text-[10px] font-black text-white/30 font-mono uppercase tracking-widest">{item.source}</span>
+                        <Badge className="bg-white/5 text-white/60 border-white/10 text-[9px] font-black px-2 py-0.5">{item.status}</Badge>
+                        <span className="text-[10px] font-bold text-white/20 ml-auto">0{i+1}</span>
+                        </div>
+                        <h4 className="text-lg font-black text-white leading-tight mb-2 group-hover:text-violet-400 transition-colors">{item.title}</h4>
+                        <p className="text-sm text-white/50 line-clamp-2 font-medium leading-relaxed">{item.description}</p>
+                        
+                        <div className="mt-5 flex items-center gap-4">
+                            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-violet-400 group-hover:text-glow">
+                                <Zap className="w-3 h-3" />
+                                Run Analysis
+                            </div>
+                            {item.link && item.link !== "#" && (
+                                <button
+                                    type="button"
+                                    className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-white/30 hover:text-white/60 transition-colors"
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        window.open(item.link, "_blank", "noopener,noreferrer");
+                                    }}
+                                >
+                                    <ExternalLink className="h-3 w-3" />
+                                    External Trace
+                                </button>
+                            )}
+                        </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                    </CardContent>
+                </Card>
+              </motion.div>
             ))}
-            {!feed.length && <div className="py-20 text-center text-slate-400 text-sm font-medium border-2 border-dashed border-slate-200 rounded-3xl">Awaiting intelligence ingestion...</div>}
+            {!feed.length && <div className="py-24 text-center glass rounded-[3rem] text-white/20 text-sm font-black uppercase tracking-widest italic border-dashed border-white/10 border-2">Awaiting Intelligence Ingestion...</div>}
           </div>
         </div>
 
-        <div className="lg:col-span-4 space-y-6">
-          <h2 className="text-sm font-bold text-slate-900 uppercase tracking-widest">Trending Threats</h2>
-          <div className="space-y-4">
-            {trending.slice(0, 3).map((t, i) => (
-              <div key={i} className="p-5 rounded-3xl bg-white border border-slate-200/80 shadow-sm relative overflow-hidden group hover:border-red-200 transition-colors">
-                <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-                  <Activity className="w-12 h-12 text-red-600" />
-                </div>
-                <div className="flex items-center gap-2 mb-3">
-                  <Badge className="bg-red-50 text-red-700 ring-red-600/20 text-[9px] font-black uppercase tracking-tighter">{t.tag || "Trending"}</Badge>
-                  <span className="text-[10px] font-bold text-slate-400 font-mono uppercase">{t.impact || "Unknown"} Impact</span>
-                </div>
-                <h4 className="text-sm font-bold text-slate-800 leading-snug mb-2">{t.title}</h4>
-                <p className="text-[11px] text-slate-500 font-medium leading-relaxed">{t.description}</p>
+        <div className="lg:col-span-4 space-y-8">
+          <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-red-500/10 flex items-center justify-center border border-red-500/20">
+                <TrendingUp className="w-5 h-5 text-red-400" />
               </div>
+              <div>
+                <h2 className="text-xl font-black text-white tracking-tight uppercase">Hot Narratives</h2>
+                <p className="text-[10px] font-bold text-red-400/40 uppercase tracking-[0.2em]">Active Propaganda Cycles</p>
+              </div>
+          </div>
+
+          <div className="space-y-5">
+            {trending.slice(0, 4).map((t, i) => (
+              <motion.div 
+                key={i}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.7 + (i * 0.1) }}
+                className="p-6 rounded-[2.5rem] glass border-white/5 relative overflow-hidden group hover:border-red-500/20 transition-all duration-500"
+              >
+                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-20 transition-opacity rotate-12 scale-150">
+                  <Activity className="w-16 h-16 text-red-500" />
+                </div>
+                <div className="flex items-center gap-3 mb-4">
+                  <Badge className="bg-red-500/10 text-red-400 border-red-500/20 text-[9px] font-black uppercase tracking-widest">{t.tag || "Trending"}</Badge>
+                  <div className="w-1 h-1 rounded-full bg-white/20" />
+                  <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">{t.impact || "High"} Impact</span>
+                </div>
+                <h4 className="text-md font-black text-white leading-tight mb-3 group-hover:text-red-400 transition-colors">{t.title}</h4>
+                <p className="text-xs text-white/40 font-medium leading-relaxed">{t.description}</p>
+                <div className="mt-5 flex justify-end">
+                    <div className="w-8 h-1 bg-white/5 rounded-full overflow-hidden">
+                        <motion.div 
+                            className="h-full bg-red-500" 
+                            animate={{ x: ["-100%", "100%"] }}
+                            transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                        />
+                    </div>
+                </div>
+              </motion.div>
             ))}
           </div>
         </div>

@@ -19,7 +19,14 @@ import {
   Scale,
   ShieldAlert,
   ShieldCheck,
+  Zap,
+  Globe,
+  Database,
+  History,
+  CheckCircle2,
+  X
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Props {
   result: VerificationResult | null;
@@ -57,12 +64,12 @@ function getDisplayClaim(result: VerificationResult) {
 function getStatusColor(value: string) {
   const key = value.toLowerCase();
   if (["real", "verified", "safe", "supports"].includes(key)) {
-    return "border-emerald-200 bg-emerald-50 text-emerald-800";
+    return "border-emerald-500/20 bg-emerald-500/10 text-emerald-400";
   }
   if (["fake", "misleading", "suspicious", "hate", "refutes"].includes(key)) {
-    return "border-rose-200 bg-rose-50 text-rose-800";
+    return "border-rose-500/20 bg-rose-500/10 text-rose-400";
   }
-  return "border-slate-200 bg-slate-100 text-slate-700";
+  return "border-white/10 bg-white/5 text-white/60";
 }
 
 function Panel({
@@ -70,20 +77,25 @@ function Panel({
   icon: Icon,
   children,
   aside,
+  className
 }: {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
   children: React.ReactNode;
   aside?: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <section className="rounded-[1.6rem] border border-slate-200/80 bg-white/92 p-5 shadow-[0_25px_70px_-40px_rgba(15,23,42,0.28)]">
-      <div className="mb-4 flex items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-950 text-white">
-            <Icon className="h-4.5 w-4.5" />
+    <section className={cn("rounded-[2.5rem] glass p-8 group", className)}>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5 border border-white/5 text-violet-400 group-hover:scale-110 transition-transform duration-500">
+            <Icon className="h-6 w-6" />
           </div>
-          <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-900">{title}</h3>
+          <div>
+             <h3 className="text-sm font-black uppercase tracking-[0.2em] text-white/90">{title}</h3>
+             <div className="h-0.5 w-6 bg-violet-500/30 mt-1 rounded-full group-hover:w-12 transition-all duration-500" />
+          </div>
         </div>
         {aside}
       </div>
@@ -92,11 +104,14 @@ function Panel({
   );
 }
 
-function StatTile({ label, value }: { label: string; value: string }) {
+function StatTile({ label, value, icon: Icon }: { label: string; value: string, icon?: any }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
-      <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{label}</div>
-      <div className="mt-2 text-lg font-black text-slate-950">{value}</div>
+    <div className="rounded-2xl bg-black/40 border border-white/5 px-5 py-4 flex items-center justify-between group/tile">
+      <div>
+        <div className="text-[9px] font-black uppercase tracking-[0.2em] text-white/20 mb-1">{label}</div>
+        <div className="text-md font-black text-white">{value}</div>
+      </div>
+      {Icon && <Icon className="w-4 h-4 text-white/10 group-hover/tile:text-violet-500/40 transition-colors" />}
     </div>
   );
 }
@@ -112,9 +127,9 @@ export function ResultModal({ result, onClose }: Props) {
   const displayClaim = getDisplayClaim(result);
   const visualContextText = result.provenance_signals.visual_context_excerpt || "";
   const veracityConfidence =
-    result.veracity.confidence !== null ? `${Math.round(result.veracity.confidence * 100)}%` : "LLM-derived";
+    result.veracity.confidence !== null ? `${Math.round(result.veracity.confidence * 100)}%` : "Neural-only";
   const toxicityConfidence =
-    result.toxicity.confidence !== null ? `${Math.round(result.toxicity.confidence * 100)}%` : "LLM-derived";
+    result.toxicity.confidence !== null ? `${Math.round(result.toxicity.confidence * 100)}%` : "Neural-only";
 
   const debateStages = [
     {
@@ -122,289 +137,278 @@ export function ResultModal({ result, onClose }: Props) {
       label: "Bias Analyst",
       icon: AlertTriangle,
       body: result.debate_trace.bias_analyst,
-      tone: "border-amber-200 bg-amber-50/80 text-amber-950",
+      tone: "border-amber-500/20 bg-amber-500/5 text-amber-200/70",
     },
     {
       key: "prosecutor",
       label: "Prosecutor",
       icon: ShieldAlert,
       body: result.debate_trace.prosecutor,
-      tone: "border-rose-200 bg-rose-50/80 text-rose-950",
+      tone: "border-rose-500/20 bg-rose-500/5 text-rose-200/70",
     },
     {
       key: "defense",
       label: "Defense",
       icon: ShieldCheck,
       body: result.debate_trace.defense,
-      tone: "border-emerald-200 bg-emerald-50/80 text-emerald-950",
+      tone: "border-emerald-500/20 bg-emerald-500/5 text-emerald-200/70",
     },
     {
       key: "judge",
       label: "Judge",
       icon: Gavel,
       body: result.debate_trace.judge,
-      tone: "border-indigo-200 bg-indigo-50/80 text-indigo-950",
+      tone: "border-violet-500/20 bg-violet-500/5 text-violet-200/70",
     },
   ];
 
   return (
     <Dialog open={!!result} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[96vh] w-[min(98vw,116rem)] max-w-none overflow-hidden rounded-[2rem] border-none bg-[linear-gradient(180deg,#f8fafc_0%,#f1f5f9_100%)] p-0 shadow-[0_50px_140px_-40px_rgba(15,23,42,0.5)]">
-        <div className="grid max-h-[96vh] grid-rows-[auto_minmax(0,1fr)] overflow-hidden">
-          <div className="relative overflow-hidden border-b border-slate-200/80 bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.12),transparent_35%),radial-gradient(circle_at_top_right,rgba(244,63,94,0.10),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] px-6 py-6 md:px-8 md:py-7">
-            <div className="mb-4 flex flex-wrap items-center gap-2 pr-8">
-              <Badge variant="outline" className="rounded-full border-slate-300 bg-white/85 px-3 py-1 text-[11px] font-black tracking-[0.18em] text-slate-700">
+      <DialogContent className="max-h-[96vh] w-[min(98vw,116rem)] max-w-none overflow-hidden rounded-[3rem] border-white/10 bg-black p-0 shadow-2xl">
+        <div className="grid max-h-[96vh] grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-mesh">
+          <div className="relative overflow-hidden border-b border-white/5 px-10 py-10 md:px-12 md:py-12 bg-black/40 backdrop-blur-3xl">
+            <button 
+                onClick={onClose}
+                className="absolute top-8 right-8 w-10 h-10 rounded-full bg-white/5 border border-white/5 flex items-center justify-center hover:bg-white/10 transition-colors z-50"
+            >
+                <X className="w-5 h-5 text-white/40" />
+            </button>
+
+            <div className="mb-6 flex flex-wrap items-center gap-3 pr-12">
+              <Badge variant="outline" className="rounded-full border-white/10 bg-white/5 px-4 py-1 text-[10px] font-black tracking-[0.18em] text-white/60">
                 {result.verdict.toUpperCase()}
               </Badge>
-              <Badge className={cn("rounded-full border px-3 py-1 text-[11px] font-black tracking-[0.18em]", getStatusColor(result.veracity.prediction))}>
+              <Badge className={cn("rounded-full border px-4 py-1 text-[10px] font-black tracking-[0.18em] shadow-lg", getStatusColor(result.veracity.prediction))}>
                 {result.veracity.prediction.toUpperCase()} | {veracityConfidence}
               </Badge>
-              <Badge className={cn("rounded-full border px-3 py-1 text-[11px] font-black tracking-[0.18em]", getStatusColor(result.toxicity.prediction))}>
+              <Badge className={cn("rounded-full border px-4 py-1 text-[10px] font-black tracking-[0.18em] shadow-lg", getStatusColor(result.toxicity.prediction))}>
                 TOXICITY: {result.toxicity.prediction.toUpperCase()} | {toxicityConfidence}
               </Badge>
               {result.c2pa_verification?.is_verified && (
-                <Badge className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-black tracking-[0.18em] text-sky-800">
+                <Badge className="rounded-full border border-sky-500/20 bg-sky-500/10 px-4 py-1 text-[10px] font-black tracking-[0.18em] text-sky-400">
                   <Fingerprint className="mr-1 inline h-3 w-3" />
                   C2PA VERIFIED
                 </Badge>
               )}
               {isFallback && (
-                <Badge className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-black tracking-[0.18em] text-amber-800">
-                  FALLBACK MODE
+                <Badge className="rounded-full border border-amber-500/20 bg-amber-500/10 px-4 py-1 text-[10px] font-black tracking-[0.18em] text-amber-400 uppercase italic">
+                  Fallback Active
                 </Badge>
               )}
             </div>
 
-            <DialogTitle className="max-w-6xl text-[2rem] font-black leading-[1.08] tracking-tight text-slate-950 md:text-[2.35rem]">
+            <DialogTitle className="max-w-6xl text-[2.5rem] font-black leading-tight tracking-tighter text-white md:text-[3.2rem]">
               {displayClaim}
             </DialogTitle>
 
-            <p className="mt-4 max-w-4xl text-[1.02rem] leading-8 text-slate-600">
-              {result.generated_reason || "No concise reasoning was returned by the backend."}
+            <p className="mt-6 max-w-5xl text-lg leading-relaxed text-white/50 font-medium">
+              {result.generated_reason || "Verification synthesis complete. No textual summary was generated."}
             </p>
           </div>
 
           <div
             ref={scrollRef}
-            className="overflow-y-auto overscroll-contain px-5 py-5 md:px-8 md:py-8"
+            className="overflow-y-auto overscroll-contain px-10 py-10 md:px-12 md:py-12 scrollbar-hide"
             onScroll={(event) => setIsCondensed(event.currentTarget.scrollTop > 56)}
           >
-            <div
-              className={cn(
-                "sticky top-0 z-20 mb-5 rounded-2xl border border-slate-200/80 bg-white/92 px-4 py-3 shadow-[0_18px_45px_-30px_rgba(15,23,42,0.35)] backdrop-blur-md transition-all duration-300",
-                isCondensed ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-2 opacity-0"
-              )}
-            >
-              <div className="flex items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="mb-1 flex flex-wrap gap-2">
-                    <Badge variant="outline" className="rounded-full border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-black tracking-[0.16em] text-slate-600">
-                      {result.verdict.toUpperCase()}
-                    </Badge>
-                    <Badge className={cn("rounded-full border px-2.5 py-1 text-[10px] font-black tracking-[0.16em]", getStatusColor(result.veracity.prediction))}>
-                      {result.veracity.prediction.toUpperCase()}
-                    </Badge>
-                  </div>
-                  <div className="line-clamp-1 text-sm font-bold text-slate-900">{displayClaim}</div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsGraphWorkspaceOpen(true)}
-                  className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                >
-                  <Maximize2 className="h-3.5 w-3.5" />
-                  Graph
-                </button>
-              </div>
-            </div>
-
-            <div className="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(19rem,0.68fr)]">
+            <div className="grid gap-8 xl:grid-cols-[minmax(0,1.55fr)_minmax(19rem,0.68fr)]">
               <Panel
-                title="Evidence Correlation"
+                title="Neural Correlation Graph"
                 icon={Network}
+                className="xl:row-span-2"
                 aside={
                   <button
                     type="button"
                     onClick={() => setIsGraphWorkspaceOpen(true)}
-                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                    className="inline-flex items-center gap-2 rounded-2xl border border-white/5 bg-white/5 px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white transition-all"
                   >
-                    <Maximize2 className="h-3.5 w-3.5" />
-                    Open Workspace
+                    <Maximize2 className="h-4 w-4" />
+                    Full Workspace
                   </button>
                 }
               >
-                <div className="rounded-[1.4rem] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.96))] p-3">
-                  <div className="h-[34rem] md:h-[40rem] xl:h-[44rem]">
+                <div className="rounded-[2rem] bg-black/40 border border-white/5 p-4 relative">
+                  <div className="absolute top-4 right-4 z-10 flex gap-2">
+                     <Badge className="bg-black/60 backdrop-blur-md border-white/5 text-[9px] font-black uppercase tracking-widest px-2 py-0.5">{result.knowledge_graph.nodes.length} Nodes</Badge>
+                  </div>
+                  <div className="h-[40rem] md:h-[50rem] xl:h-[60rem]">
                     <EvidenceGraph graph={result.knowledge_graph} />
                   </div>
                 </div>
               </Panel>
 
-              <div className="space-y-5">
-                <Panel title="Decision Snapshot" icon={Brain}>
+              <div className="space-y-6">
+                <Panel title="Analysis Matrix" icon={Brain}>
                   <div className="grid gap-3">
-                    <StatTile label="Verdict" value={result.verdict} />
-                    <StatTile label="Evidence Sources" value={String(result.evidence.length)} />
-                    <StatTile label="Graph Nodes" value={String(result.knowledge_graph.nodes.length)} />
-                    <StatTile label="Trust Mode" value={result.provenance_signals.source_mode} />
+                    <StatTile label="Final Verdict" value={result.verdict} icon={CheckCircle2} />
+                    <StatTile label="Neural Memory" value={String(result.evidence.length)} icon={Database} />
+                    <StatTile label="Ingestion Mode" value={result.provenance_signals.source_mode.toUpperCase()} icon={Globe} />
                   </div>
 
-                  <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Manipulation Read</div>
-                    <p className="mt-2 text-sm leading-7 text-slate-600">{result.propaganda_anatomy}</p>
+                  <div className="mt-6 p-6 rounded-3xl bg-violet-500/5 border border-violet-500/10 relative overflow-hidden group/anatomy">
+                    <div className="absolute -right-4 -bottom-4 opacity-5 rotate-12 group-hover/anatomy:scale-110 transition-transform duration-700">
+                        <Zap className="w-20 h-20 text-violet-500" />
+                    </div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-violet-400 mb-3">Manipulation Anatomy</div>
+                    <p className="text-sm leading-relaxed text-white/70 italic font-medium">{result.propaganda_anatomy}</p>
                   </div>
                 </Panel>
 
-                <Panel title="Signal Summary" icon={ShieldAlert}>
-                  <div className="flex flex-wrap gap-2">
+                <Panel title="Heuristics & Fallacies" icon={ShieldAlert}>
+                  <div className="flex flex-wrap gap-2 mb-6">
                     {result.detected_fallacies.length ? (
                       result.detected_fallacies.map((fallacy, index) => (
-                        <Badge key={index} variant="secondary" className="rounded-full border-none bg-amber-100 px-3 py-1 text-[10px] font-black tracking-[0.12em] text-amber-800">
+                        <Badge key={index} className="rounded-full border-amber-500/20 bg-amber-500/10 px-4 py-1 text-[10px] font-black tracking-widest text-amber-400">
                           {fallacy}
                         </Badge>
                       ))
                     ) : (
-                      <span className="text-sm text-slate-500">No explicit fallacies were identified for this result.</span>
+                      <span className="text-[11px] font-bold text-white/20 uppercase tracking-widest">No structural fallacies detected.</span>
                     )}
                   </div>
 
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {result.evidence_citations.map((citation, index) => (
-                      <Badge key={index} variant="outline" className="rounded-full border-slate-200 bg-white px-3 py-1 text-[10px] font-black tracking-[0.14em] text-slate-600">
-                        E{citation.index + 1} {citation.relation} {Math.round(citation.confidence * 100)}%
-                      </Badge>
-                    ))}
+                  <div className="p-5 rounded-3xl bg-white/5 border border-white/5">
+                      <div className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-4">Evidence Citations</div>
+                      <div className="flex flex-wrap gap-2">
+                        {result.evidence_citations.map((citation, index) => (
+                          <Badge key={index} variant="outline" className="rounded-xl border-white/5 bg-black/40 px-3 py-1.5 text-[10px] font-black tracking-tight text-white/70">
+                            <span className="text-violet-400 mr-2 font-mono">E{citation.index + 1}</span>
+                            <span className="uppercase opacity-50 mr-2">{citation.relation}</span>
+                            <span className="text-white font-mono">{Math.round(citation.confidence * 100)}%</span>
+                          </Badge>
+                        ))}
+                      </div>
                   </div>
                 </Panel>
               </div>
             </div>
 
-            <div className="mt-6">
-              <Tabs defaultValue="analysis" className="space-y-5">
-                <TabsList className="h-auto rounded-[1.1rem] bg-slate-200/70 p-1">
-                  <TabsTrigger className="rounded-xl px-4 py-2 text-xs font-black uppercase tracking-[0.18em]" value="analysis">
-                    Analysis
-                  </TabsTrigger>
-                  <TabsTrigger className="rounded-xl px-4 py-2 text-xs font-black uppercase tracking-[0.18em]" value="evidence">
-                    Evidence
-                  </TabsTrigger>
-                  <TabsTrigger className="rounded-xl px-4 py-2 text-xs font-black uppercase tracking-[0.18em]" value="trace">
+            <div className="mt-8">
+              <Tabs defaultValue="trace" className="space-y-8">
+                <TabsList className="h-auto rounded-3xl bg-white/5 p-1.5 border border-white/5">
+                  <TabsTrigger className="rounded-2xl px-8 py-3 text-[11px] font-black uppercase tracking-widest data-[state=active]:bg-violet-600 data-[state=active]:text-white transition-all" value="trace">
                     Debate Trace
+                  </TabsTrigger>
+                  <TabsTrigger className="rounded-2xl px-8 py-3 text-[11px] font-black uppercase tracking-widest data-[state=active]:bg-violet-600 data-[state=active]:text-white transition-all" value="analysis">
+                    Explainability
+                  </TabsTrigger>
+                  <TabsTrigger className="rounded-2xl px-8 py-3 text-[11px] font-black uppercase tracking-widest data-[state=active]:bg-violet-600 data-[state=active]:text-white transition-all" value="evidence">
+                    Source Memory
                   </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="analysis" className="mt-0">
-                  <div className="grid gap-6 xl:grid-cols-3">
-                    <Panel title="Trust Signals" icon={Fingerprint}>
-                      <div className="space-y-4">
-                        <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-                          <div className="mb-2 flex items-center gap-2 text-sky-700">
-                            <Fingerprint className="h-4 w-4" />
-                            <div className="text-[10px] font-black uppercase tracking-[0.2em]">C2PA Status</div>
+                <TabsContent value="trace" className="mt-0 outline-none">
+                  <div className="grid gap-6 md:grid-cols-2">
+                    {debateStages.map((stage) => (
+                      <motion.div 
+                        key={stage.key} 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={cn("rounded-[2.5rem] border p-8 backdrop-blur-md relative overflow-hidden group/stage", stage.tone)}
+                      >
+                         <div className="absolute -right-4 -bottom-4 opacity-5 rotate-12 scale-150 group-hover/stage:scale-110 transition-transform duration-700">
+                             <stage.icon className="w-24 h-24" />
+                         </div>
+                        <div className="mb-6 flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+                            <stage.icon className="h-5 w-5" />
                           </div>
-                          <div className="text-base font-black text-slate-950">
-                            {result.c2pa_verification?.is_verified ? "Verified Origin" : "No trusted signature"}
-                          </div>
-                          <p className="mt-2 text-sm leading-7 text-slate-600">
-                            {result.c2pa_verification?.details || "No provenance metadata was returned."}
-                          </p>
+                          <div className="text-[11px] font-black uppercase tracking-[0.2em]">{stage.label}</div>
                         </div>
+                        <p className="text-[15px] leading-relaxed font-medium">
+                          {stage.body || "Neural agent was bypassed for this verification stage."}
+                        </p>
+                      </motion.div>
+                    ))}
+                  </div>
+                </TabsContent>
 
-                        <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-                          <div className="mb-2 flex items-center gap-2 text-indigo-700">
-                            <ScanSearch className="h-4 w-4" />
-                            <div className="text-[10px] font-black uppercase tracking-[0.2em]">Media Analysis</div>
-                          </div>
-                          <div className="text-base font-black text-slate-950">
-                            {result.provenance_signals.has_visual_context ? "Visual context captured" : "Text-only verification"}
-                          </div>
-                          {result.provenance_signals.has_visual_context ? (
-                            <div className="mt-2 max-h-72 overflow-y-auto rounded-xl border border-slate-200 bg-white/80 p-3 text-sm leading-7 whitespace-pre-wrap text-slate-600">
-                              {visualContextText}
+                <TabsContent value="analysis" className="mt-0 outline-none">
+                  <div className="grid gap-8 xl:grid-cols-3">
+                    <Panel title="Visual Context" icon={ScanSearch}>
+                        <div className="space-y-6">
+                            <div className="p-5 rounded-3xl bg-black/40 border border-white/5">
+                                <div className="text-[10px] font-black uppercase tracking-widest text-violet-400 mb-2">Multimodal Sensor Read</div>
+                                <div className="text-lg font-black text-white">
+                                    {result.provenance_signals.has_visual_context ? "Optical Context Active" : "Direct Semantic Flow"}
+                                </div>
                             </div>
-                          ) : (
-                            <p className="mt-2 text-sm leading-7 text-slate-600">
-                              No image or video context was needed for this claim.
-                            </p>
-                          )}
+                            {result.provenance_signals.has_visual_context ? (
+                                <div className="max-h-96 overflow-y-auto rounded-3xl border border-white/5 bg-black/20 p-6 text-[15px] leading-relaxed italic font-medium whitespace-pre-wrap text-white/60 scrollbar-hide">
+                                    {visualContextText}
+                                </div>
+                            ) : (
+                                <div className="py-12 text-center border-2 border-dashed border-white/5 rounded-[2rem] text-white/10 text-xs font-black uppercase tracking-widest">No Visual Assets Found</div>
+                            )}
                         </div>
-                      </div>
                     </Panel>
 
-                    <Panel title="Attribution" icon={Info}>
-                      <div className="flex flex-wrap gap-1.5 rounded-2xl border border-slate-200 bg-white/80 p-4">
+                    <Panel title="Mechanistic Heatmap" icon={Fingerprint} className="xl:col-span-2">
+                      <div className="flex flex-wrap gap-2 rounded-[2rem] bg-black/40 border border-white/5 p-8">
                         {result.xai_attributions.length ? (
                           result.xai_attributions.map((token, index) => {
                             const score = token.attribution_score || token.score || 0;
-                            const alpha = Math.min(Math.abs(score) * 1.5, 0.85);
+                            const alpha = Math.min(Math.abs(score) * 2, 0.9);
                             const backgroundColor =
                               score > 0
-                                ? `rgba(239, 68, 68, ${alpha})`
+                                ? `rgba(244, 63, 94, ${alpha})`
                                 : score < 0
-                                  ? `rgba(34, 197, 94, ${alpha})`
-                                  : "rgba(0,0,0,0.04)";
+                                  ? `rgba(16, 185, 129, ${alpha})`
+                                  : "rgba(255,255,255,0.03)";
 
                             return (
-                              <span
+                              <motion.span
                                 key={index}
-                                className="cursor-help rounded-md px-2 py-1 font-mono text-[13px] transition-transform hover:scale-105"
-                                style={{ backgroundColor, color: alpha > 0.5 ? "#fff" : "#334155" }}
+                                whileHover={{ scale: 1.1, zIndex: 10 }}
+                                className="cursor-help rounded-lg px-2.5 py-1 font-mono text-[14px] font-black border border-white/5"
+                                style={{ backgroundColor, color: alpha > 0.4 ? "#fff" : "rgba(255,255,255,0.3)" }}
                                 title={`Influence: ${score.toFixed(4)}`}
                               >
                                 {token.word}
-                              </span>
+                              </motion.span>
                             );
                           })
                         ) : (
-                          <div className="text-sm text-slate-500">No token attribution data returned for this result.</div>
+                          <div className="py-12 w-full text-center border-2 border-dashed border-white/5 rounded-[2rem] text-white/10 text-xs font-black uppercase tracking-widest">Heatmap Data Unavailable</div>
                         )}
                       </div>
-                    </Panel>
-
-                    <Panel title="Historical Context" icon={Info}>
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 text-sm leading-7 text-slate-600">
-                        {result.historical_context || "No historical context was attached to this result."}
+                      <div className="mt-6 flex items-center justify-between px-2">
+                        <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-white/20">
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-2 h-2 rounded bg-rose-500" />
+                                <span>Refutes</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-2 h-2 rounded bg-emerald-500" />
+                                <span>Supports</span>
+                            </div>
+                        </div>
+                        <div className="text-[10px] font-black uppercase tracking-widest text-white/20 italic">Token Occlusion Method</div>
                       </div>
                     </Panel>
                   </div>
                 </TabsContent>
 
-                <TabsContent value="evidence" className="mt-0">
+                <TabsContent value="evidence" className="mt-0 outline-none">
                   <Panel
-                    title="Retrieved Context"
-                    icon={Brain}
-                    aside={<span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{result.evidence.length} sources</span>}
+                    title="Knowledge Ingestion"
+                    icon={Database}
+                    aside={<span className="text-[11px] font-black uppercase tracking-widest text-white/20">{result.evidence.length} Latent Artifacts</span>}
                   >
-                    <div className="space-y-3">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                       {result.evidence.length ? (
                         result.evidence.map((entry, index) => (
-                          <div key={index} className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 text-sm leading-7 text-slate-600">
+                          <div key={index} className="rounded-3xl border border-white/5 bg-black/40 p-6 text-[14px] leading-relaxed text-white/50 font-medium">
+                            <div className="flex items-center gap-2 mb-3">
+                                <div className="w-5 h-5 rounded bg-violet-500/10 flex items-center justify-center text-violet-400 font-mono text-[10px] font-black">{index + 1}</div>
+                                <div className="h-px flex-1 bg-white/5" />
+                            </div>
                             {entry}
                           </div>
                         ))
                       ) : (
-                        <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-400">
-                          No external evidence found in the knowledge base.
-                        </div>
+                        <div className="col-span-full py-24 text-center border-2 border-dashed border-white/5 rounded-[3rem] text-white/10 text-sm font-black uppercase tracking-widest">No Trace Found in Index</div>
                       )}
-                    </div>
-                  </Panel>
-                </TabsContent>
-
-                <TabsContent value="trace" className="mt-0">
-                  <Panel title="Debate Trace" icon={Scale}>
-                    <div className="grid gap-4 xl:grid-cols-2">
-                      {debateStages.map((stage) => (
-                        <div key={stage.key} className={cn("rounded-2xl border p-5", stage.tone)}>
-                          <div className="mb-2 flex items-center gap-2">
-                            <stage.icon className="h-4 w-4" />
-                            <div className="text-[10px] font-black uppercase tracking-[0.2em]">{stage.label}</div>
-                          </div>
-                          <p className="text-sm leading-7">
-                            {stage.body || "No detailed trace was returned for this stage."}
-                          </p>
-                        </div>
-                      ))}
                     </div>
                   </Panel>
                 </TabsContent>
@@ -413,89 +417,6 @@ export function ResultModal({ result, onClose }: Props) {
           </div>
         </div>
       </DialogContent>
-
-      <Dialog open={isGraphWorkspaceOpen} onOpenChange={setIsGraphWorkspaceOpen}>
-        <DialogContent className="max-h-[96vh] w-[min(98vw,122rem)] max-w-none overflow-hidden rounded-[2rem] border-none bg-[linear-gradient(180deg,#f8fafc_0%,#f1f5f9_100%)] p-0 shadow-[0_50px_140px_-45px_rgba(15,23,42,0.52)]">
-          <div className="grid max-h-[96vh] grid-rows-[auto_minmax(0,1fr)] overflow-hidden">
-            <div className="border-b border-slate-200/80 bg-white/92 px-6 py-5 backdrop-blur-md md:px-8">
-              <div className="flex flex-wrap items-start justify-between gap-4 pr-8">
-                <div>
-                  <div className="mb-2 flex items-center gap-2">
-                    <Badge variant="outline" className="rounded-full border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-black tracking-[0.18em] text-slate-600">
-                      GRAPH WORKSPACE
-                    </Badge>
-                    <Badge className={cn("rounded-full border px-3 py-1 text-[10px] font-black tracking-[0.18em]", getStatusColor(result.veracity.prediction))}>
-                      {result.veracity.prediction.toUpperCase()}
-                    </Badge>
-                  </div>
-                  <DialogTitle className="text-2xl font-black text-slate-950">Evidence Correlation Workspace</DialogTitle>
-                  <p className="mt-2 max-w-4xl text-sm leading-7 text-slate-600">
-                    A larger graph-first view for inspecting relationships without the surrounding report UI.
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant="outline" className="rounded-full border-slate-200 bg-white px-3 py-1 text-[10px] font-black tracking-[0.16em] text-slate-600">
-                    {result.knowledge_graph.nodes.length} nodes
-                  </Badge>
-                  <Badge variant="outline" className="rounded-full border-slate-200 bg-white px-3 py-1 text-[10px] font-black tracking-[0.16em] text-slate-600">
-                    {result.knowledge_graph.edges.length} edges
-                  </Badge>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid min-h-0 gap-6 overflow-hidden px-5 py-5 md:px-8 md:py-6 xl:grid-cols-[minmax(0,1.8fr)_minmax(21rem,0.72fr)]">
-              <div className="min-h-0 rounded-[1.75rem] border border-slate-200/90 bg-white/92 p-4 shadow-[0_25px_80px_-42px_rgba(15,23,42,0.28)]">
-                <div className="h-full min-h-[38rem] xl:min-h-[46rem]">
-                  <EvidenceGraph graph={result.knowledge_graph} />
-                </div>
-              </div>
-
-              <div className="min-h-0 space-y-5 overflow-y-auto">
-                <Panel title="Claim Snapshot" icon={Brain}>
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 text-sm leading-7 text-slate-700">
-                    {result.claim}
-                  </div>
-                </Panel>
-
-                <Panel title="Evidence Links" icon={Network}>
-                  <div className="flex flex-wrap gap-2">
-                    {result.evidence_citations.length ? (
-                      result.evidence_citations.map((citation, index) => (
-                        <Badge key={index} variant="outline" className="rounded-full border-slate-200 bg-white px-3 py-1 text-[10px] font-black tracking-[0.14em] text-slate-600">
-                          Evidence {citation.index + 1}: {citation.relation} ({Math.round(citation.confidence * 100)}%)
-                        </Badge>
-                      ))
-                    ) : (
-                      <span className="text-sm text-slate-500">No explicit evidence citations were returned for this result.</span>
-                    )}
-                  </div>
-                </Panel>
-
-                <Panel
-                  title="Retrieved Context"
-                  icon={Info}
-                  aside={<span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{result.evidence.length} sources</span>}
-                >
-                  <div className="space-y-3">
-                    {result.evidence.length ? (
-                      result.evidence.map((entry, index) => (
-                        <div key={index} className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 text-sm leading-7 text-slate-600">
-                          {entry}
-                        </div>
-                      ))
-                    ) : (
-                      <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-sm text-slate-400">
-                        No external evidence found in the knowledge base.
-                      </div>
-                    )}
-                  </div>
-                </Panel>
-              </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </Dialog>
   );
 }

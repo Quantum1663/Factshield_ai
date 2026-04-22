@@ -14,11 +14,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={cn("min-h-screen bg-slate-50 text-slate-900 font-sans antialiased flex")}>
+    <html lang="en" className="dark">
+      <body className={cn("min-h-screen bg-background text-foreground font-sans antialiased flex bg-mesh")}>
         <Sidebar />
-        <main className="flex-1 overflow-y-auto px-8 py-8 lg:px-12">
-          <div className="mx-auto max-w-[1200px]">
+        <main className="flex-1 overflow-y-auto px-8 py-10 lg:px-16 scrollbar-hide">
+          <div className="mx-auto max-w-[1400px]">
             {children}
           </div>
         </main>

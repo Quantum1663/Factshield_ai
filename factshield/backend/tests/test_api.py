@@ -9,7 +9,8 @@ with patch('models.classifier.classify', return_value={"veracity": {"label": "fa
         pass
 
 from fastapi.testclient import TestClient
-from app import app, result_cache, rate_limiter
+from app import app
+from utils.cache_manager import result_cache, rate_limiter
 
 
 @pytest.fixture
