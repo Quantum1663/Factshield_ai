@@ -69,7 +69,7 @@ def analyze_claim_with_llm(claim, evidence_list, vlm_context=None, c2pa_data=Non
     """
     safe_claim = _sanitize_for_prompt(claim)
     safe_evidence = [_sanitize_for_prompt(str(e)) for e in (evidence_list[:3] if evidence_list else [])]
-    
+
     # Construct enhanced context including VLM and C2PA data
     context_parts = []
     if c2pa_data:
@@ -78,7 +78,7 @@ def analyze_claim_with_llm(claim, evidence_list, vlm_context=None, c2pa_data=Non
         context_parts.append(f"[Visual Context Analysis]: {vlm_context}")
     if safe_evidence:
         context_parts.append("[Textual Evidence]:\n" + "\n".join(safe_evidence))
-        
+
     context = "\n\n".join(context_parts) if context_parts else "No external evidence or context available."
     model_name = "llama-3.3-70b-versatile"
 
@@ -89,10 +89,10 @@ def analyze_claim_with_llm(claim, evidence_list, vlm_context=None, c2pa_data=Non
         bias_prompt = f"""
         You are 'The Bias Analyst', an expert in cognitive biases, logical fallacies, and psychological manipulation.
         Your goal: Analyze the claim and context to identify any manipulative tactics (e.g., Strawman, Ad Hominem, Fear Mongering, False Dilemma).
-        
+
         Context Evidence: {context}
         Claim to Analyze: "{safe_claim}"
-        
+
         Provide a concise report listing any detected fallacies and how they are used in the claim. If none, state 'None detected'.
         """
         b_res = client.chat.completions.create(
@@ -112,7 +112,7 @@ def analyze_claim_with_llm(claim, evidence_list, vlm_context=None, c2pa_data=Non
         Context Evidence: {context}
         Bias Analyst Report: {bias_report}
         Claim to Analyze: "{safe_claim}"
-        
+
         Provide a sharp, evidence-based argument debunking the claim.
         """
 
@@ -129,12 +129,12 @@ def analyze_claim_with_llm(claim, evidence_list, vlm_context=None, c2pa_data=Non
         You are 'The Defense', an expert in identifying nuance, satire, and missing context.
         You have read the Prosecutor's case and the Bias Analyst's report. 
         Your goal: Argue why the claim might be TRUE, SATIRICAL, or why the Prosecutor's interpretation is UNFAIR or MISSING CONTEXT.
-        
+
         Prosecutor's Argument: {prosecutor_argument}
         Bias Analyst Report: {bias_report}
         Context Evidence: {context}
         Claim to Analyze: "{safe_claim}"
-        
+
         Provide a nuanced counter-argument.
         """
 

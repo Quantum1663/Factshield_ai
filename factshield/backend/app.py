@@ -41,6 +41,7 @@ class ResultCache:
         if len(self._cache) > self._max_size:
             self._cache.popitem(last=False)
 
+
 result_cache = ResultCache(max_size=100, ttl_seconds=600)
 
 
@@ -60,6 +61,7 @@ class RateLimiter:
             return False
         self._requests[client_ip].append(now)
         return True
+
 
 rate_limiter = RateLimiter(max_requests=15, window_seconds=60)
 
@@ -127,6 +129,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 class NewsRequest(BaseModel):
     text: str
@@ -250,7 +253,8 @@ def resolve_label_and_confidence(base_prediction: dict, analysis_label):
 def build_fallback_analysis(prediction: dict, evidence: list[str], analysis: dict) -> dict:
     veracity_label = prediction["veracity"]["label"]
     confidence = float(prediction["veracity"]["confidence"])
-    fallback_message = analysis.get("propaganda_anatomy") or "Reasoning provider unavailable. Returned local classifier and retrieval results only."
+    fallback_message = analysis.get(
+        "propaganda_anatomy") or "Reasoning provider unavailable. Returned local classifier and retrieval results only."
 
     if veracity_label == "real":
         verdict = "Supports"
@@ -281,6 +285,7 @@ def build_fallback_analysis(prediction: dict, evidence: list[str], analysis: dic
 
 init_task_db()
 
+
 def run_verification_task(task_id: str, text: str, vlm_context: str = None, c2pa_data: dict = None):
     """Background worker to run the heavy ML pipeline with caching."""
     logger.info(f"--- STARTING TASK {task_id} ---")
@@ -306,6 +311,7 @@ def run_verification_task(task_id: str, text: str, vlm_context: str = None, c2pa
         save_task(task_id, "failed", error=str(e))
     logger.info(f"--- FINISHED TASK {task_id} ---")
 
+
 @app.post("/verify")
 async def verify_news(request: NewsRequest, background_tasks: BackgroundTasks, req: Request):
     client_ip = req.client.host if req.client else "unknown"
@@ -316,21 +322,22 @@ async def verify_news(request: NewsRequest, background_tasks: BackgroundTasks, r
     background_tasks.add_task(run_verification_task, task_id, request.text)
     return {"task_id": task_id, "status": "processing"}
 
+
 @app.post("/verify-image")
 async def verify_image(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
     validate_uploaded_file(file, "image/")
     contents = await file.read()
-    
+
     # 1. C2PA Provenance Check
     c2pa_data = verify_c2pa_metadata(contents)
     logger.info(f"C2PA Check: {c2pa_data}")
 
     try:
         image = Image.open(io.BytesIO(contents))
-        image.verify() # Ensure it's a valid image
+        image.verify()  # Ensure it's a valid image
     except UnidentifiedImageError as exc:
         raise HTTPException(status_code=400, detail="Uploaded file is not a valid image.") from exc
-    
+
     # 2. VLM Context Extraction
     try:
         vlm_context = analyze_image_with_vlm(contents)
@@ -341,12 +348,13 @@ async def verify_image(background_tasks: BackgroundTasks, file: UploadFile = Fil
 
     if not vlm_context or "failed" in vlm_context.lower():
         raise HTTPException(status_code=400, detail="Failed to extract context from image.")
-        
+
     task_id = str(uuid.uuid4())
     save_task(task_id, "pending")
     # For image, the VLM context serves as both the text claim and the visual context
     background_tasks.add_task(run_verification_task, task_id, vlm_context, vlm_context, c2pa_data)
     return {"task_id": task_id, "status": "processing"}
+
 
 @app.get("/task-status/{task_id}")
 async def get_task_status(task_id: str):
@@ -355,17 +363,18 @@ async def get_task_status(task_id: str):
         return {"status": "failed", "error": "Task not found"}
     return task
 
+
 def process_full_verification(text, vlm_context=None, c2pa_data=None):
     logger.info(f"Step 1: Classifying text...")
     prediction = classify(text)
-    
+
     logger.info(f"Step 2: Search check...")
     if prediction["veracity"]["confidence"] < 0.6 or prediction["veracity"]["label"] == "unknown":
         logger.info(f"Low confidence, triggering live search...")
         urls = search_news(text)
         for url in urls:
             art = scrape_article(url)
-            if art: 
+            if art:
                 logger.info(f"Adding new evidence from {url}")
                 add_new_evidence(art)
 
@@ -448,13 +457,16 @@ def process_full_verification(text, vlm_context=None, c2pa_data=None):
         "xai_target_label": veracity_label
     }
 
+
 import cv2
 import numpy as np
 from utils.feed_aggregator import get_live_feed
 
+
 @app.get("/feed")
 def fetch_intelligence_feed():
     return get_live_feed()
+
 
 @app.post("/verify-video")
 async def verify_video(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
@@ -464,7 +476,7 @@ async def verify_video(background_tasks: BackgroundTasks, file: UploadFile = Fil
         raise HTTPException(status_code=503, detail="OCR Engine (Tesseract) is not installed on this server.")
 
     validate_uploaded_file(file, "video/")
-    
+
     # 1. C2PA Provenance Check
     contents = await file.read()
     c2pa_data = verify_c2pa_metadata(contents, file_extension=".mp4")
@@ -474,7 +486,7 @@ async def verify_video(background_tasks: BackgroundTasks, file: UploadFile = Fil
     temp_dir = Path(tempfile.gettempdir())
     video_filename = f"{uuid.uuid4()}.mp4"
     video_path = temp_dir / video_filename
-    audio_path = video_path.with_suffix(".mp3")
+    audio_path = temp_dir / Path(video_filename).with_suffix(".mp3").name
 
     try:
         with open(video_path, "wb") as buffer:
@@ -499,16 +511,16 @@ async def verify_video(background_tasks: BackgroundTasks, file: UploadFile = Fil
 
         # --- Step 2: Audio Extraction and Transcription ---
         video_clip = VideoFileClip(str(video_path))
-        
+
         spoken_transcript = ""
         if video_clip and video_clip.audio is not None:
             logger.info("Extracting audio for transcription...")
             video_clip.audio.write_audiofile(str(audio_path), logger=None)
-            
+
             # Transcribe using Faster-Whisper
             segments, info = whisper_model.transcribe(str(audio_path), beam_size=5)
             spoken_transcript = " ".join([segment.text for segment in segments]).strip()
-        
+
         if video_clip:
             video_clip.close()
 
@@ -522,7 +534,7 @@ async def verify_video(background_tasks: BackgroundTasks, file: UploadFile = Fil
         # --- Step 4: Background Task handoff ---
         task_id = str(uuid.uuid4())
         save_task(task_id, "pending")
-        background_tasks.add_task(run_verification_task, task_id, full_context, full_context, c2pa_data)
+        background_tasks.add_task(run_verification_task, task_id, full_context, None, c2pa_data)
         return {"task_id": task_id, "status": "processing"}
 
     except Exception as e:
@@ -536,6 +548,7 @@ async def verify_video(background_tasks: BackgroundTasks, file: UploadFile = Fil
         if audio_path.exists():
             audio_path.unlink()
 
+
 @app.get("/trending")
 def get_trending():
     data_path = DATA_DIR / "trending_propaganda.json"
@@ -543,6 +556,7 @@ def get_trending():
         with open(data_path, "r", encoding="utf-8") as f:
             return json.load(f)
     return []
+
 
 @app.get("/archive")
 def get_archive():
@@ -552,6 +566,7 @@ def get_archive():
             metadata = json.load(f)
             return metadata[-20:]
     return []
+
 
 @app.get("/neural-stats")
 def get_neural_stats():
@@ -576,6 +591,7 @@ def get_neural_stats():
         "status": "Optimal" if pipeline_ready else "Degraded"
     }
 
+
 @app.get("/system-status")
 def system_status():
     dataset_size = get_dataset_size()
@@ -588,6 +604,7 @@ def system_status():
         "faiss_vectors": index_size,
         "api_status": "running"
     }
+
 
 @app.get("/", include_in_schema=False)
 def serve_frontend():
