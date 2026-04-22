@@ -22,3 +22,9 @@ def test_retrieve_fact_returns_strings():
 def test_retrieve_fact_handles_empty_query():
     results = retrieve_fact("", k=3)
     assert isinstance(results, list)
+
+
+def test_vector_store_health_metadata_not_greater_than_index():
+    from rag.vector_store import index, metadata
+
+    assert len(metadata) <= index.ntotal

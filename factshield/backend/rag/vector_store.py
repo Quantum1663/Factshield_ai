@@ -27,6 +27,23 @@ else:
     metadata = []
 
 
+def reload_store():
+    global index, metadata
+
+    if INDEX_PATH.exists():
+        index = faiss.read_index(str(INDEX_PATH))
+    else:
+        index = faiss.IndexFlatL2(dimension)
+
+    if META_PATH.exists():
+        with open(META_PATH, "r", encoding="utf-8") as f:
+            metadata = json.load(f)
+    else:
+        metadata = []
+
+    return {"vector_count": index.ntotal, "metadata_count": len(metadata)}
+
+
 def add_vector(embedding, meta):
 
     if meta is None:

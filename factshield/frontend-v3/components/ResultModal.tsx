@@ -268,7 +268,7 @@ export function ResultModal({ result, onClose }: Props) {
                       </div>
                     )) : (
                       <div className="col-span-full rounded-lg border border-dashed border-slate-200 bg-slate-50 p-10 text-center text-sm text-slate-500">
-                        No retrieval evidence was returned.
+                        No retrieval evidence was returned for this task. If the system reports degraded retrieval, rebuild the vector database and rerun the claim.
                       </div>
                     )}
                   </div>

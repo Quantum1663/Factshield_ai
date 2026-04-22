@@ -35,6 +35,13 @@ router = APIRouter()
 class NewsRequest(BaseModel):
     text: str
 
+
+def normalize_claim_text(text: str) -> str:
+    normalized = " ".join((text or "").split())
+    if len(normalized) < 8:
+        raise HTTPException(status_code=400, detail="Claim text is too short to verify.")
+    return normalized
+
 def validate_uploaded_file(file: UploadFile, expected_prefix: str):
     if not file.content_type or not file.content_type.startswith(expected_prefix):
         raise HTTPException(
@@ -47,9 +54,10 @@ async def verify_news(request: NewsRequest, background_tasks: BackgroundTasks, r
     client_ip = req.client.host if req.client else "unknown"
     if not rate_limiter.is_allowed(client_ip):
         raise HTTPException(status_code=429, detail="Too many requests. Please wait before submitting again.")
+    text = normalize_claim_text(request.text)
     task_id = str(uuid.uuid4())
     save_task(task_id, "pending")
-    background_tasks.add_task(run_verification_task, task_id, request.text)
+    background_tasks.add_task(run_verification_task, task_id, text)
     return {"task_id": task_id, "status": "processing"}
 
 @router.post("/verify-image")

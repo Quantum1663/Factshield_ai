@@ -40,6 +40,16 @@ class TestSystemEndpoints:
         data = r.json()
         assert "local_classifier" in data
         assert "reasoner" in data
+        assert "retrieval_status" in data
+        assert "index_consistent" in data
+
+    def test_retrieval_health(self, client):
+        r = client.get("/retrieval-health")
+        assert r.status_code == 200
+        data = r.json()
+        assert "metadata_count" in data
+        assert "vector_count" in data
+        assert "index_consistent" in data
 
     def test_feed_returns_list(self, client):
         r = client.get("/feed")
@@ -68,6 +78,10 @@ class TestVerifyEndpoint:
     def test_verify_rejects_empty_body(self, client):
         r = client.post("/verify", json={})
         assert r.status_code == 422
+
+    def test_verify_rejects_tiny_claim(self, client):
+        r = client.post("/verify", json={"text": "   hi   "})
+        assert r.status_code == 400
 
     def test_task_status_returns_for_valid_id(self, client):
         r = client.post("/verify", json={"text": "Some claim"})

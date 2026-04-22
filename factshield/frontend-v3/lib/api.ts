@@ -27,6 +27,7 @@ export interface TrendingItem {
 export interface NeuralStats {
   memory_count?: number;
   vector_count?: number;
+  metadata_count?: number;
   cache_entries?: number;
   rate_limit_per_minute?: number;
   reasoner?: string;
@@ -36,6 +37,9 @@ export interface NeuralStats {
   ocr_available?: boolean;
   video_support?: boolean;
   groq_configured?: boolean;
+  retrieval_status?: string;
+  retrieval_message?: string;
+  index_consistent?: boolean;
   status?: string;
   [key: string]: string | number | boolean | null | undefined;
 }
@@ -45,7 +49,21 @@ export interface SystemStatus {
   model_status: string;
   dataset_entries: number;
   faiss_vectors: number;
+  metadata_count?: number;
+  retrieval_status?: string;
+  retrieval_message?: string;
+  index_consistent?: boolean;
   api_status: string;
+}
+
+export interface RetrievalHealth {
+  status: string;
+  message: string;
+  index_exists: boolean;
+  metadata_exists: boolean;
+  index_consistent: boolean;
+  metadata_count: number;
+  vector_count: number;
 }
 
 export interface XaiAttribution {
@@ -183,5 +201,10 @@ export const getNeuralStats = async (): Promise<NeuralStats> => {
 
 export const getSystemStatus = async (): Promise<SystemStatus> => {
   const response = await api.get<SystemStatus>('/system-status');
+  return response.data;
+};
+
+export const getRetrievalHealth = async (): Promise<RetrievalHealth> => {
+  const response = await api.get<RetrievalHealth>('/retrieval-health');
   return response.data;
 };

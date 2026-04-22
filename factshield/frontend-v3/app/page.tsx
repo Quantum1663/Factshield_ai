@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { CommandCenter } from "@/components/CommandCenter";
 import { FeedItem, getIntelligenceFeed, getTrending, getNeuralStats, getSystemStatus, NeuralStats, SystemStatus, TrendingItem } from "@/lib/api";
-import { Activity, ArrowRight, Database, ExternalLink, Globe2, Radio, SearchCheck, TrendingUp } from "lucide-react";
+import { Activity, AlertTriangle, ArrowRight, Database, ExternalLink, Globe2, Radio, SearchCheck, TrendingUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -38,6 +38,14 @@ export default function Dashboard() {
     { label: "Live Items", value: feed.length, sub: "Feed signals", icon: Radio },
     { label: "System State", value: stats?.status || systemStatus?.api_status || "Active", sub: "Runtime status", icon: Activity },
   ];
+
+  const retrievalDegraded = Boolean(
+    (stats && stats.index_consistent === false) ||
+    (systemStatus && systemStatus.index_consistent === false) ||
+    stats?.retrieval_status === "degraded" ||
+    stats?.retrieval_status === "unavailable"
+  );
+  const retrievalMessage = stats?.retrieval_message || systemStatus?.retrieval_message || "Retrieval index is degraded.";
 
   const handleAnalyzeFeedItem = (item: FeedItem) => {
     const claim = [item.title, item.description].filter(Boolean).join(". ");
@@ -83,6 +91,32 @@ export default function Dashboard() {
           </div>
         </div>
       </section>
+
+      {retrievalDegraded && (
+        <section className="surface holo-edge rounded-xl p-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-300/15 text-amber-200">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="section-label text-amber-100/80">Retrieval Degraded</div>
+                <p className="mt-1 text-sm leading-6 text-slate-600">{retrievalMessage}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-sm sm:min-w-[260px]">
+              <div className="rounded-lg border border-cyan-300/15 bg-black/20 p-3">
+                <div className="text-xs font-semibold uppercase tracking-widest text-slate-500">Metadata</div>
+                <div className="mt-1 font-semibold text-slate-950">{stats?.metadata_count ?? systemStatus?.metadata_count ?? stats?.memory_count ?? 0}</div>
+              </div>
+              <div className="rounded-lg border border-cyan-300/15 bg-black/20 p-3">
+                <div className="text-xs font-semibold uppercase tracking-widest text-slate-500">Vectors</div>
+                <div className="mt-1 font-semibold text-slate-950">{stats?.vector_count ?? systemStatus?.faiss_vectors ?? 0}</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         {statCards.map((s) => (

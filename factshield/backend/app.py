@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from faster_whisper import WhisperModel
 
 # --- 1. Environment & Logging Setup ---
 BASE_DIR = Path(__file__).resolve().parent
@@ -14,38 +13,34 @@ load_dotenv(BASE_DIR.parent / ".env")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# --- 2. Shared ML Models & Services ---
-from services.model_loader import get_whisper_model
-# Initialize whisper on startup
-get_whisper_model()
+raw_cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
+cors_origins = [origin.strip() for origin in raw_cors_origins.split(",") if origin.strip()]
 
-# --- 3. App Initialization ---
+# --- 2. App Initialization ---
 app = FastAPI(
     title="SAMI: Social Integrity System",
     description="Advanced AI-powered fact-checking and propaganda detection platform.",
     version="2.0.0"
 )
 
-# PERMISSIVE CORS: Set to "*" for the final presentation to avoid network errors
-# In a production environment, restrict this to trusted origins.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# --- 4. Database Initialization ---
+# --- 3. Database Initialization ---
 from utils.db_manager import init_task_db
 init_task_db()
 
-# --- 5. Routers ---
+# --- 4. Routers ---
 from routers import verify, system
 app.include_router(verify.router, tags=["Verification"])
 app.include_router(system.router, tags=["System Intelligence"])
 
-# --- 6. Frontend Serving ---
+# --- 5. Frontend Serving ---
 LEGACY_FRONTEND_DIR = BASE_DIR.parent / "frontend"
 FRONTEND_V3_DIR = BASE_DIR.parent / "frontend-v3"
 FRONTEND_V3_EXPORT_DIR = FRONTEND_V3_DIR / "out"
