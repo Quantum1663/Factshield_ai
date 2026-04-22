@@ -2,13 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { CommandCenter } from "@/components/CommandCenter";
-import { Card, CardContent } from "@/components/ui/card";
 import { FeedItem, getIntelligenceFeed, getTrending, getNeuralStats, getSystemStatus, NeuralStats, SystemStatus, TrendingItem } from "@/lib/api";
-import { Layers, Database, Activity, Cpu, Rss, ArrowRight, ExternalLink, Zap, Terminal, Globe, TrendingUp } from "lucide-react";
+import { Activity, ArrowRight, Database, ExternalLink, Globe2, Radio, SearchCheck, TrendingUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { motion } from "framer-motion";
 
 export default function Dashboard() {
   const [feed, setFeed] = useState<FeedItem[]>([]);
@@ -17,12 +15,10 @@ export default function Dashboard() {
   const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
   const [commandQuery, setCommandQuery] = useState("");
   const [autoSubmitSignal, setAutoSubmitSignal] = useState(0);
-  const [sessionId, setSessionId] = useState("");
 
   useEffect(() => {
-    setSessionId(`SAMI-${Math.random().toString(36).substring(7).toUpperCase()}`);
     const fetchData = () => {
-        Promise.all([getIntelligenceFeed(), getTrending(), getNeuralStats(), getSystemStatus()])
+      Promise.all([getIntelligenceFeed(), getTrending(), getNeuralStats(), getSystemStatus()])
         .then(([f, t, s, system]) => {
           setFeed(f);
           setTrending(t);
@@ -37,199 +33,167 @@ export default function Dashboard() {
   }, []);
 
   const statCards = [
-    { label: "Neural Index", val: stats?.memory_count ?? systemStatus?.dataset_entries ?? 0, sub: "Indexed Facts", icon: Database, color: "text-violet-400", bg: "bg-violet-500/10" },
-    { label: "Vector Space", val: stats?.vector_count ?? systemStatus?.faiss_vectors ?? 0, sub: stats?.vector_engine || "FAISS L2", icon: Zap, color: "text-blue-400", bg: "bg-blue-500/10" },
-    { label: "Live Signals", val: feed.length, sub: "Incoming Feeds", icon: Globe, color: "text-emerald-400", bg: "bg-emerald-500/10" },
-    { label: "Core Sync", val: stats?.status || "Active", sub: "Pipeline Status", icon: Activity, color: "text-amber-400", bg: "bg-amber-500/10" },
+    { label: "Evidence Records", value: stats?.memory_count ?? systemStatus?.dataset_entries ?? 0, sub: "Indexed knowledge", icon: Database },
+    { label: "Vector Store", value: stats?.vector_count ?? systemStatus?.faiss_vectors ?? 0, sub: stats?.vector_engine || "FAISS L2", icon: SearchCheck },
+    { label: "Live Items", value: feed.length, sub: "Feed signals", icon: Radio },
+    { label: "System State", value: stats?.status || systemStatus?.api_status || "Active", sub: "Runtime status", icon: Activity },
   ];
 
   const handleAnalyzeFeedItem = (item: FeedItem) => {
     const claim = [item.title, item.description].filter(Boolean).join(". ");
     setCommandQuery(claim);
     setAutoSubmitSignal((current) => current + 1);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
-    <div className="space-y-12 pb-20">
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col md:flex-row md:items-end justify-between gap-6"
-      >
-        <div>
-          <div className="flex items-center gap-3 mb-3">
-             <Badge className="bg-violet-500/20 text-violet-400 border-violet-500/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest">SAMI Intelligence v2.0</Badge>
-             <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[10px] font-bold text-white/40 uppercase tracking-tighter">Live Neural Uplink</span>
-             </div>
+    <div className="space-y-8 pb-12">
+      <section className="grid min-h-[520px] items-end gap-6 lg:grid-cols-[minmax(0,1fr)_390px]">
+        <div className="min-w-0">
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <Badge className="rounded-md border border-cyan-300/30 bg-cyan-300/10 px-2.5 py-1 text-xs font-semibold text-cyan-100">FactShield Spatial</Badge>
+            <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
+              <span className="status-dot bg-emerald-500" />
+              3D verification workspace
+            </div>
           </div>
-          <h1 className="text-5xl font-black tracking-tighter text-white">Verification Hub</h1>
-          <p className="text-white/40 font-medium mt-2 max-w-xl text-lg">Autonomous defense against misinformation. Unified command center for propaganda analysis and truth-assessment.</p>
+          <h1 className="max-w-5xl text-5xl font-semibold tracking-tight text-slate-950 sm:text-7xl">
+            Command the evidence field.
+          </h1>
+          <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">
+            Verify claims, inspect provenance, and watch retrieval signals move through a spatial intelligence interface built for serious misinformation analysis.
+          </p>
         </div>
-        
-        <div className="flex items-center gap-4 bg-white/5 p-2 rounded-2xl border border-white/5 backdrop-blur-md">
-            <div className="px-4 py-2">
-                <div className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-1">Session ID</div>
-                <div className="text-xs font-mono font-bold text-white/80">{sessionId || "INITIALIZING..."}</div>
-            </div>
-            <div className="w-px h-8 bg-white/10" />
-            <div className="px-4 py-2">
-                <div className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-1">Neural Load</div>
-                <div className="text-xs font-mono font-bold text-violet-400">1.2ms / query</div>
-            </div>
-        </div>
-      </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-        {statCards.map((s, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: i * 0.1 }}
-          >
-            <Card className="glass group hover:border-white/20 transition-all duration-500 rounded-[2.5rem] overflow-hidden">
-                <CardContent className="p-7">
-                    <div className="flex items-center justify-between mb-6">
-                        <div className={cn("w-14 h-14 rounded-3xl flex items-center justify-center transition-transform group-hover:scale-110 duration-500", s.bg)}>
-                            <s.icon className={cn("w-7 h-7", s.color)} />
-                        </div>
-                        <div className="flex flex-col items-end">
-                            <div className="text-3xl font-black text-white tracking-tighter">{s.val}</div>
-                            <div className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mt-1">{s.sub}</div>
-                        </div>
-                    </div>
-                    <div className="text-[11px] font-bold text-white/40 uppercase tracking-widest">{s.label}</div>
-                </CardContent>
-            </Card>
-          </motion.div>
+        <div className="surface holo-edge depth-lift rounded-xl p-5">
+          <div className="section-label">Runtime Snapshot</div>
+          <div className="mt-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <span className="text-sm text-slate-500">Classifier</span>
+              <span className="max-w-[180px] truncate text-sm font-semibold text-slate-900">{stats?.local_classifier || "XLM-Roberta"}</span>
+            </div>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <span className="text-sm text-slate-500">Reasoner</span>
+              <span className="max-w-[180px] truncate text-sm font-semibold text-slate-900">{stats?.reasoner || "Available on demand"}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-slate-500">Media intake</span>
+              <span className="text-sm font-semibold text-slate-900">{stats?.video_support ? "Image + video" : "Image ready"}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {statCards.map((s) => (
+          <div key={s.label} className="surface depth-lift rounded-xl p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="section-label">{s.label}</div>
+                <div className="metric-value mt-3">{s.value}</div>
+                <div className="mt-1 text-sm text-slate-500">{s.sub}</div>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-300/10 text-primary">
+                <s.icon className="h-5 w-5" />
+              </div>
+            </div>
+          </div>
         ))}
       </div>
 
-      <motion.div
-         initial={{ opacity: 0, y: 40 }}
-         animate={{ opacity: 1, y: 0 }}
-         transition={{ delay: 0.4 }}
-      >
-        <CommandCenter initialQuery={commandQuery} autoSubmitSignal={autoSubmitSignal} />
-      </motion.div>
+      <CommandCenter initialQuery={commandQuery} autoSubmitSignal={autoSubmitSignal} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        <div className="lg:col-span-8 space-y-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-violet-500/10 flex items-center justify-center border border-violet-500/20">
-                <Terminal className="w-5 h-5 text-violet-400" />
-              </div>
-              <div>
-                <h2 className="text-xl font-black text-white tracking-tight uppercase">Neural Signals</h2>
-                <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">Latest Ingested Intelligence</p>
-              </div>
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+        <div className="space-y-4">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <div className="section-label">Incoming Signals</div>
+              <h2 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">Latest feed items</h2>
             </div>
-            <Link href="/feed" className="group flex items-center gap-2 text-[11px] font-black text-white/40 hover:text-violet-400 transition-colors uppercase tracking-widest">
-                Network Stream <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+            <Link href="/feed" className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary/80">
+              View feed <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-          
-          <div className="grid grid-cols-1 gap-4">
+
+          <div className="space-y-3">
             {feed.slice(0, 5).map((item, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.5 + (i * 0.1) }}
-              >
-                <Card
-                    className="cursor-pointer glass border-white/5 hover:border-white/20 transition-all duration-300 group rounded-[2rem]"
-                    onClick={() => handleAnalyzeFeedItem(item)}
-                >
-                    <CardContent className="p-6 flex items-start gap-6">
-                    <div className="w-16 h-16 rounded-[1.5rem] bg-white/5 border border-white/5 flex items-center justify-center flex-shrink-0 group-hover:bg-violet-500/10 group-hover:border-violet-500/20 transition-all duration-500">
-                        {item.type === 'NEWS' ? <Globe className="w-8 h-8 text-blue-400/50 group-hover:text-blue-400 transition-colors" /> : <Activity className="w-8 h-8 text-violet-400/50 group-hover:text-violet-400 transition-colors" />}
+              <article key={item.id || `${item.title}-${i}`} className="surface depth-lift rounded-xl p-4 transition-colors hover:border-primary/30">
+                <button type="button" className="w-full text-left" onClick={() => handleAnalyzeFeedItem(item)}>
+                  <div className="flex gap-4">
+                    <div className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 sm:flex">
+                      {item.type === "NEWS" ? <Globe2 className="h-5 w-5" /> : <Radio className="h-5 w-5" />}
                     </div>
-                    <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-2">
-                        <span className="text-[10px] font-black text-white/30 font-mono uppercase tracking-widest">{item.source}</span>
-                        <Badge className="bg-white/5 text-white/60 border-white/10 text-[9px] font-black px-2 py-0.5">{item.status}</Badge>
-                        <span className="text-[10px] font-bold text-white/20 ml-auto">0{i+1}</span>
-                        </div>
-                        <h4 className="text-lg font-black text-white leading-tight mb-2 group-hover:text-violet-400 transition-colors">{item.title}</h4>
-                        <p className="text-sm text-white/50 line-clamp-2 font-medium leading-relaxed">{item.description}</p>
-                        
-                        <div className="mt-5 flex items-center gap-4">
-                            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-violet-400 group-hover:text-glow">
-                                <Zap className="w-3 h-3" />
-                                Run Analysis
-                            </div>
-                            {item.link && item.link !== "#" && (
-                                <button
-                                    type="button"
-                                    className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-white/30 hover:text-white/60 transition-colors"
-                                    onClick={(event) => {
-                                        event.stopPropagation();
-                                        window.open(item.link, "_blank", "noopener,noreferrer");
-                                    }}
-                                >
-                                    <ExternalLink className="h-3 w-3" />
-                                    External Trace
-                                </button>
-                            )}
-                        </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-2 flex flex-wrap items-center gap-2">
+                        <span className="text-xs font-semibold uppercase tracking-widest text-slate-500">{item.source}</span>
+                        <Badge className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-600">{item.status}</Badge>
+                      </div>
+                      <h3 className="line-clamp-2 text-base font-semibold leading-snug text-slate-950">{item.title}</h3>
+                      <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">{item.description}</p>
                     </div>
-                    </CardContent>
-                </Card>
-              </motion.div>
+                  </div>
+                </button>
+                <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+                  <span className="text-xs font-medium text-slate-500">{item.timestamp || `Signal ${i + 1}`}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-semibold text-primary">Analyze</span>
+                    {item.link && item.link !== "#" && (
+                      <button
+                        type="button"
+                        className="text-slate-400 hover:text-slate-700"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          window.open(item.link, "_blank", "noopener,noreferrer");
+                        }}
+                        title="Open source"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </article>
             ))}
-            {!feed.length && <div className="py-24 text-center glass rounded-[3rem] text-white/20 text-sm font-black uppercase tracking-widest italic border-dashed border-white/10 border-2">Awaiting Intelligence Ingestion...</div>}
+            {!feed.length && (
+              <div className="surface-muted rounded-lg py-16 text-center text-sm font-medium text-slate-500">
+                No feed items are available yet.
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="lg:col-span-4 space-y-8">
-          <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-red-500/10 flex items-center justify-center border border-red-500/20">
-                <TrendingUp className="w-5 h-5 text-red-400" />
-              </div>
-              <div>
-                <h2 className="text-xl font-black text-white tracking-tight uppercase">Hot Narratives</h2>
-                <p className="text-[10px] font-bold text-red-400/40 uppercase tracking-[0.2em]">Active Propaganda Cycles</p>
-              </div>
+        <aside className="space-y-4">
+          <div>
+            <div className="section-label">Narrative Watch</div>
+            <h2 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">Active trends</h2>
           </div>
-
-          <div className="space-y-5">
+          <div className="space-y-3">
             {trending.slice(0, 4).map((t, i) => (
-              <motion.div 
-                key={i}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.7 + (i * 0.1) }}
-                className="p-6 rounded-[2.5rem] glass border-white/5 relative overflow-hidden group hover:border-red-500/20 transition-all duration-500"
-              >
-                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-20 transition-opacity rotate-12 scale-150">
-                  <Activity className="w-16 h-16 text-red-500" />
+              <div key={`${t.title}-${i}`} className="surface depth-lift rounded-xl p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <Badge className={cn(
+                    "rounded-md border px-2 py-0.5 text-[11px] font-semibold",
+                    i === 0 ? "border-red-200 bg-red-50 text-red-700" : "border-amber-200 bg-amber-50 text-amber-700"
+                  )}>
+                    {t.tag || "Trending"}
+                  </Badge>
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+                    <TrendingUp className="h-3.5 w-3.5" />
+                    {t.impact || "High"}
+                  </div>
                 </div>
-                <div className="flex items-center gap-3 mb-4">
-                  <Badge className="bg-red-500/10 text-red-400 border-red-500/20 text-[9px] font-black uppercase tracking-widest">{t.tag || "Trending"}</Badge>
-                  <div className="w-1 h-1 rounded-full bg-white/20" />
-                  <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">{t.impact || "High"} Impact</span>
-                </div>
-                <h4 className="text-md font-black text-white leading-tight mb-3 group-hover:text-red-400 transition-colors">{t.title}</h4>
-                <p className="text-xs text-white/40 font-medium leading-relaxed">{t.description}</p>
-                <div className="mt-5 flex justify-end">
-                    <div className="w-8 h-1 bg-white/5 rounded-full overflow-hidden">
-                        <motion.div 
-                            className="h-full bg-red-500" 
-                            animate={{ x: ["-100%", "100%"] }}
-                            transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-                        />
-                    </div>
-                </div>
-              </motion.div>
+                <h3 className="text-base font-semibold leading-snug text-slate-950">{t.title}</h3>
+                <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-600">{t.description}</p>
+              </div>
             ))}
+            {!trending.length && (
+              <div className="surface-muted rounded-lg py-16 text-center text-sm font-medium text-slate-500">
+                No active trends detected.
+              </div>
+            )}
           </div>
-        </div>
-      </div>
+        </aside>
+      </section>
     </div>
   );
 }

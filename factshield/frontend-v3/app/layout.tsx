@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Sidebar } from "@/components/Sidebar";
+import { SpatialScene } from "@/components/SpatialScene";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -14,11 +15,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className={cn("min-h-screen bg-background text-foreground font-sans antialiased flex bg-mesh")}>
+    <html lang="en">
+      <body className={cn("min-h-screen bg-background text-foreground font-sans antialiased lg:flex")}>
+        <SpatialScene />
         <Sidebar />
-        <main className="flex-1 overflow-y-auto px-8 py-10 lg:px-16 scrollbar-hide">
-          <div className="mx-auto max-w-[1400px]">
+        <main className="min-w-0 flex-1 px-4 pb-12 pt-20 sm:px-6 lg:px-10 lg:py-8">
+          <div className="mx-auto max-w-[1440px]">
             {children}
           </div>
         </main>

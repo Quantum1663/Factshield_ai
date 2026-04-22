@@ -73,12 +73,27 @@ def search(embedding, k=5):
     # Normalize for consistent search against the normalized index
     faiss.normalize_L2(vector)
 
-    distances, indices = index.search(vector, k)
+    if index.ntotal == 0 or not metadata:
+        return []
+
+    # The FAISS index can get ahead of metadata if a previous ingestion/rebuild
+    # was interrupted. Over-fetch so valid metadata-backed hits are still returned.
+    search_k = min(index.ntotal, max(k, min(index.ntotal, k * 10)))
+    if index.ntotal != len(metadata):
+        search_k = index.ntotal
+
+    distances, indices = index.search(vector, search_k)
 
     results = []
 
+    seen = set()
     for idx in indices[0]:
         if idx >= 0 and idx < len(metadata):
+            if idx in seen:
+                continue
+            seen.add(idx)
             results.append(metadata[idx])
+            if len(results) >= k:
+                break
 
     return results

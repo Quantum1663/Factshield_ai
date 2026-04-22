@@ -2,14 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { FeedItem, getIntelligenceFeed, getTaskStatus, submitVerification, VerificationResult } from "@/lib/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Rss, Clock, ExternalLink, Loader2, Zap, Globe, ShieldCheck } from "lucide-react";
+import { Clock, ExternalLink, Globe2, Loader2, Radio, SearchCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ResultModal } from "@/components/ResultModal";
 import axios from "axios";
-import { motion } from "framer-motion";
 
 export default function FeedPage() {
   const [feed, setFeed] = useState<FeedItem[]>([]);
@@ -65,104 +63,82 @@ export default function FeedPage() {
     }
   };
 
-  const canOpenSource = (item: FeedItem) => Boolean(item.link && item.link !== "#");
-
-  const getStatusColor = (v: string) => {
-    const k = v.toLowerCase();
-    if (["real", "verified", "safe"].includes(k)) return "border-emerald-500/20 bg-emerald-500/10 text-emerald-400";
-    if (["fake", "misleading", "suspicious", "hate"].includes(k)) return "border-rose-500/20 bg-rose-500/10 text-rose-400";
-    return "border-white/10 bg-white/5 text-white/40";
+  const getStatusColor = (value: string) => {
+    const key = value.toLowerCase();
+    if (["real", "verified", "safe"].includes(key)) return "border-emerald-200 bg-emerald-50 text-emerald-700";
+    if (["fake", "misleading", "suspicious", "hate"].includes(key)) return "border-red-200 bg-red-50 text-red-700";
+    return "border-slate-200 bg-slate-50 text-slate-600";
   };
 
   return (
-    <div className="space-y-10">
-      <motion.div 
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        className="flex items-center justify-between"
-      >
+    <div className="space-y-6 pb-12">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
-          <h1 className="text-4xl font-black tracking-tighter text-white uppercase italic">Intelligence Feed</h1>
-          <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">Real-time signal ingestion from verified neural streams</p>
+          <div className="section-label">Live Feed</div>
+          <h1 className="mt-2 text-4xl font-semibold tracking-tight text-slate-950">Incoming intelligence</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+            Review ingested articles and posts, open their source, or send them directly into the verification pipeline.
+          </p>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-2xl border border-white/5">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Live Uplink Active</span>
+        <div className="flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600">
+          <span className="status-dot bg-emerald-500" />
+          Feed active
         </div>
-      </motion.div>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {feed.length > 0 ? feed.map((item, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
-          >
-            <Card className="glass border-white/5 hover:border-violet-500/30 transition-all duration-500 group overflow-hidden rounded-[2.5rem]">
-                <CardHeader className="pb-4 border-b border-white/5 bg-white/5 backdrop-blur-3xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                    <Globe className="w-16 h-16 text-white" />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {feed.length > 0 ? feed.map((item, i) => {
+          const id = item.id || item.title;
+          const isLoading = activeFeedId === id;
+          return (
+            <article key={`${id}-${i}`} className="surface depth-lift rounded-xl p-5 transition-colors hover:border-primary/30">
+              <div className="mb-4 flex items-start justify-between gap-4">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+                    {item.type === "NEWS" ? <Globe2 className="h-5 w-5" /> : <Radio className="h-5 w-5" />}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="truncate text-xs font-semibold uppercase tracking-widest text-slate-500">{item.source}</div>
+                    <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-500">
+                      <Clock className="h-3.5 w-3.5" />
+                      {item.timestamp || "Just now"}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between mb-4 relative">
-                    <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-violet-600/10 border border-violet-500/20 text-violet-400 flex items-center justify-center">
-                        <Rss className="w-5 h-5" />
-                    </div>
-                    <span className="text-[10px] font-black text-white/30 font-mono uppercase tracking-[0.2em]">{item.source}</span>
-                    </div>
-                    <Badge className={cn("text-[9px] font-black px-3 py-1 rounded-full border shadow-lg", getStatusColor(item.status))}>
-                    {item.status.toUpperCase()}
-                    </Badge>
-                </div>
-                <CardTitle className="text-lg font-black text-white leading-tight line-clamp-2 group-hover:text-violet-400 transition-colors">
-                    {item.title}
-                </CardTitle>
-                </CardHeader>
-                <CardContent className="p-8">
-                <p className="text-sm text-white/50 font-medium leading-relaxed mb-8 line-clamp-3">
-                    {item.description}
-                </p>
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-white/20">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">{item.timestamp || "Just Now"}</span>
-                    </div>
-                    <div className="flex gap-3">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-10 rounded-xl text-[10px] font-black uppercase tracking-widest border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/10 text-white/60"
-                        disabled={!canOpenSource(item)}
-                        onClick={() => {
-                        if (item.link) {
-                            window.open(item.link, "_blank", "noopener,noreferrer");
-                        }
-                        }}
-                    >
-                        <ExternalLink className="mr-2 h-3.5 w-3.5" />
-                        Trace
-                    </Button>
-                    <Button
-                        size="sm"
-                        className="h-10 rounded-xl text-[10px] font-black uppercase tracking-widest bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-500/20 transition-all"
-                        disabled={activeFeedId === (item.id || item.title)}
-                        onClick={() => void handleAnalyze(item)}
-                    >
-                        {activeFeedId === (item.id || item.title) ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Zap className="mr-2 h-3.5 w-3.5 fill-white" />}
-                        Analyze
-                    </Button>
-                    </div>
-                </div>
-                </CardContent>
-            </Card>
-          </motion.div>
-        )) : (
-          <div className="col-span-full py-48 text-center glass rounded-[3rem] border-dashed border-white/5 border-2">
-            <div className="w-24 h-24 bg-white/5 rounded-[2rem] flex items-center justify-center mx-auto text-white/10 mb-6">
-              <Rss className="w-10 h-10" />
-            </div>
-            <div className="text-white/20 font-black uppercase text-sm tracking-[0.3em] italic">Awaiting Signal Ingestion...</div>
+                <Badge className={cn("rounded-md border px-2 py-0.5 text-[11px] font-semibold", getStatusColor(item.status))}>
+                  {item.status}
+                </Badge>
+              </div>
+
+              <h2 className="line-clamp-2 text-lg font-semibold leading-snug text-slate-950">{item.title}</h2>
+              <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-600">{item.description}</p>
+
+              <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-lg border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                  disabled={!item.link || item.link === "#"}
+                  onClick={() => item.link && window.open(item.link, "_blank", "noopener,noreferrer")}
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Source
+                </Button>
+                <Button
+                  size="sm"
+                  className="rounded-lg bg-primary text-white hover:bg-primary/90"
+                  disabled={isLoading}
+                  onClick={() => void handleAnalyze(item)}
+                >
+                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <SearchCheck className="h-4 w-4" />}
+                  Analyze
+                </Button>
+              </div>
+            </article>
+          );
+        }) : (
+          <div className="surface-muted col-span-full rounded-lg py-24 text-center text-sm font-medium text-slate-500">
+            No feed items are available yet.
           </div>
         )}
       </div>

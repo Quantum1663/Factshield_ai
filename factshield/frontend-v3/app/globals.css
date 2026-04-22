@@ -6,28 +6,20 @@
 
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
-
   --color-card: hsl(var(--card));
   --color-card-foreground: hsl(var(--card-foreground));
-
   --color-popover: hsl(var(--popover));
   --color-popover-foreground: hsl(var(--popover-foreground));
-
   --color-primary: hsl(var(--primary));
   --color-primary-foreground: hsl(var(--primary-foreground));
-
   --color-secondary: hsl(var(--secondary));
   --color-secondary-foreground: hsl(var(--secondary-foreground));
-
   --color-muted: hsl(var(--muted));
   --color-muted-foreground: hsl(var(--muted-foreground));
-
   --color-accent: hsl(var(--accent));
   --color-accent-foreground: hsl(var(--accent-foreground));
-
   --color-destructive: hsl(var(--destructive));
   --color-destructive-foreground: hsl(var(--destructive-foreground));
-
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
@@ -39,57 +31,152 @@
 
 @layer base {
   :root {
-    /* High-contrast Midnight Theme */
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 6%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 263.4 70% 50.4%; /* Violet */
-    --primary-foreground: 210 40% 98%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 263.4 70% 50.4%;
-    --radius: 1rem;
+    --background: 218 54% 5%;
+    --foreground: 189 70% 96%;
+    --card: 215 38% 12%;
+    --card-foreground: 189 70% 96%;
+    --popover: 215 42% 9%;
+    --popover-foreground: 189 70% 96%;
+    --primary: 187 92% 48%;
+    --primary-foreground: 218 60% 6%;
+    --secondary: 215 34% 16%;
+    --secondary-foreground: 190 60% 92%;
+    --muted: 214 28% 18%;
+    --muted-foreground: 194 24% 68%;
+    --accent: 42 95% 62%;
+    --accent-foreground: 35 70% 10%;
+    --destructive: 0 78% 58%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 190 46% 24%;
+    --input: 190 34% 22%;
+    --ring: 187 92% 48%;
+    --radius: 0.75rem;
   }
-}
 
-@layer base {
   * {
     @apply border-border;
   }
+
+  html {
+    color-scheme: dark;
+  }
+
   body {
-    @apply bg-background text-foreground font-sans selection:bg-primary/30;
+    @apply bg-background text-foreground font-sans antialiased selection:bg-primary/25;
+    background:
+      linear-gradient(180deg, rgba(3, 10, 21, 0.96), rgba(5, 13, 25, 0.98)),
+      repeating-linear-gradient(90deg, rgba(53, 211, 229, 0.055) 0 1px, transparent 1px 86px),
+      repeating-linear-gradient(180deg, rgba(53, 211, 229, 0.04) 0 1px, transparent 1px 86px);
+    min-height: 100vh;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
   }
 }
 
 @layer utilities {
-  .glass {
-    @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)];
-  }
-  
-  .glow-primary {
-    @apply shadow-[0_0_20px_rgba(139,92,246,0.3)];
-  }
-  
-  .text-glow {
-    text-shadow: 0 0 10px currentColor;
+  .surface {
+    @apply border shadow-2xl;
+    background:
+      linear-gradient(145deg, rgba(10, 25, 43, 0.84), rgba(7, 17, 31, 0.66)),
+      linear-gradient(90deg, rgba(53, 211, 229, 0.14), rgba(255, 200, 87, 0.06));
+    border-color: rgba(125, 235, 255, 0.2);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(24px);
   }
 
-  .bg-mesh {
-    background-image: 
-      radial-gradient(at 0% 0%, hsla(263, 70%, 50%, 0.15) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, hsla(220, 70%, 50%, 0.1) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, hsla(280, 70%, 50%, 0.1) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, hsla(240, 70%, 50%, 0.1) 0px, transparent 50%);
+  .surface-muted {
+    background: rgba(8, 23, 40, 0.62);
+    border: 1px solid rgba(125, 235, 255, 0.16);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(18px);
+  }
+
+  .section-label {
+    @apply text-[11px] font-bold uppercase tracking-widest text-cyan-200/65;
+  }
+
+  .metric-value {
+    @apply text-2xl font-semibold tracking-tight text-white;
+  }
+
+  .status-dot {
+    @apply h-2 w-2 rounded-full;
+    box-shadow: 0 0 16px currentColor;
+  }
+
+  .holo-edge {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .holo-edge::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(90deg, rgba(53, 211, 229, 0.35), transparent 28%, transparent 72%, rgba(255, 200, 87, 0.22)),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 24%);
+    opacity: 0.45;
+  }
+
+  .depth-lift {
+    transform-style: preserve-3d;
+    transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+  }
+
+  .depth-lift:hover {
+    transform: translateY(-4px) rotateX(1deg);
+    border-color: rgba(53, 211, 229, 0.42);
+    box-shadow: 0 28px 90px rgba(0, 0, 0, 0.48), 0 0 34px rgba(53, 211, 229, 0.1);
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .text-slate-950,
+  .text-slate-900,
+  .text-slate-800 {
+    color: rgb(241 250 255 / 0.98) !important;
+  }
+
+  .text-slate-700,
+  .text-slate-600 {
+    color: rgb(196 231 238 / 0.78) !important;
+  }
+
+  .text-slate-500,
+  .text-slate-400 {
+    color: rgb(154 200 210 / 0.68) !important;
+  }
+
+  .bg-white,
+  .bg-slate-50 {
+    background-color: rgba(8, 23, 40, 0.72) !important;
+  }
+
+  .bg-slate-100 {
+    background-color: rgba(17, 42, 66, 0.82) !important;
+  }
+
+  .border-slate-100,
+  .border-slate-200 {
+    border-color: rgba(125, 235, 255, 0.16) !important;
+  }
+
+  .hover\:bg-slate-50:hover,
+  .hover\:bg-slate-100:hover {
+    background-color: rgba(24, 61, 88, 0.86) !important;
   }
 }
