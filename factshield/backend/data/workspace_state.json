@@ -1,0 +1,38 @@
+{
+  "report_meta": {
+    "a7f10aa7-ce02-4779-8512-a7831a858f7a": {
+      "title": "Executive Integrity Brief",
+      "owner": "Policy Desk",
+      "audience": "Executive Review",
+      "approval_status": "Approved",
+      "reviewer_notes": "Policy review completed. Language tightened for executive handoff.",
+      "last_exported_at": "2026-04-22T18:08:48+00:00"
+    },
+    "c932b8c4-2d79-4781-b080-b096d1db32f5": {
+      "last_exported_at": "2026-04-28T18:54:44+00:00"
+    }
+  },
+  "assignments": {
+    "a7f10aa7-ce02-4779-8512-a7831a858f7a": "policy-reviewer"
+  },
+  "settings_controls": {
+    "alert-routing": {
+      "value": "7 destinations",
+      "status": "enforced",
+      "detail": "Route high-risk narratives to policy, ops, legal, and executive channels."
+    }
+  },
+  "plan": {
+    "name": "Pro Workspace",
+    "features": [
+      "10 analyst seats",
+      "5k verifications / month",
+      "Evidence audit logs",
+      "Priority model routing"
+    ]
+  },
+  "policy": {
+    "title": "Two-person review",
+    "detail": "High-impact verdicts require analyst and policy reviewer approval before report export."
+  }
+}

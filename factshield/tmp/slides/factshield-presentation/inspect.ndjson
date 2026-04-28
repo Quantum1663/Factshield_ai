@@ -1,0 +1,694 @@
+{"kind":"deck","id":"factshield-presentation","slideCount":12,"slideSize":{"width":1280,"height":720}}
+{"kind":"shape","slide":1,"role":"background","bbox":[0,0,1280,720]}
+{"kind":"shape","slide":1,"role":"top strip","bbox":[0,0,1280,106]}
+{"kind":"shape","slide":1,"role":"glow right","bbox":[948,-132,410,410]}
+{"kind":"shape","slide":1,"role":"glow left","bbox":[-118,472,360,360]}
+{"kind":"shape","slide":1,"role":"footer band","bbox":[0,670,1280,50]}
+{"kind":"shape","slide":1,"role":"pill FACTSHIELD","bbox":[64,84,164,30]}
+{"kind":"shape","slide":1,"role":"pill text FACTSHIELD","bbox":[78,91,136,15]}
+{"kind":"textbox","slide":1,"role":"pill text FACTSHIELD","text":"FACTSHIELD","bbox":[78,91,136,15]}
+{"kind":"shape","slide":1,"role":"cover title","bbox":[64,126,420,56]}
+{"kind":"textbox","slide":1,"role":"cover title","text":"FactShield","bbox":[64,126,420,56]}
+{"kind":"shape","slide":1,"role":"cover subtitle","bbox":[66,204,544,88]}
+{"kind":"textbox","slide":1,"role":"cover subtitle","text":"An explainable misinformation-verification system with retrieval, reasoning, analyst workflow, and report export in one platform.","bbox":[66,204,544,88]}
+{"kind":"shape","slide":1,"role":"metric pipeline stages","bbox":[64,344,152,114]}
+{"kind":"shape","slide":1,"role":"metric accent pipeline stages","bbox":[64,344,152,6]}
+{"kind":"shape","slide":1,"role":"metric value pipeline stages","bbox":[82,364,116,44]}
+{"kind":"textbox","slide":1,"role":"metric value pipeline stages","text":"5","bbox":[82,364,116,44]}
+{"kind":"shape","slide":1,"role":"metric label pipeline stages","bbox":[82,418,116,30]}
+{"kind":"textbox","slide":1,"role":"metric label pipeline stages","text":"pipeline stages","bbox":[82,418,116,30]}
+{"kind":"shape","slide":1,"role":"metric validated demo cases","bbox":[232,344,152,114]}
+{"kind":"shape","slide":1,"role":"metric accent validated demo cases","bbox":[232,344,152,6]}
+{"kind":"shape","slide":1,"role":"metric value validated demo cases","bbox":[250,364,116,44]}
+{"kind":"textbox","slide":1,"role":"metric value validated demo cases","text":"4","bbox":[250,364,116,44]}
+{"kind":"shape","slide":1,"role":"metric label validated demo cases","bbox":[250,418,116,30]}
+{"kind":"textbox","slide":1,"role":"metric label validated demo cases","text":"validated demo cases","bbox":[250,418,116,30]}
+{"kind":"shape","slide":1,"role":"metric real report export flow","bbox":[400,344,152,114]}
+{"kind":"shape","slide":1,"role":"metric accent real report export flow","bbox":[400,344,152,6]}
+{"kind":"shape","slide":1,"role":"metric value real report export flow","bbox":[418,364,116,44]}
+{"kind":"textbox","slide":1,"role":"metric value real report export flow","text":"1","bbox":[418,364,116,44]}
+{"kind":"shape","slide":1,"role":"metric label real report export flow","bbox":[418,418,116,30]}
+{"kind":"textbox","slide":1,"role":"metric label real report export flow","text":"real report export flow","bbox":[418,418,116,30]}
+{"kind":"shape","slide":1,"role":"cover system panel","bbox":[672,100,540,492]}
+{"kind":"shape","slide":1,"role":"label PROJECT SNAPSHOT","bbox":[708,134,220,16]}
+{"kind":"textbox","slide":1,"role":"label PROJECT SNAPSHOT","text":"PROJECT SNAPSHOT","bbox":[708,134,220,16]}
+{"kind":"shape","slide":1,"role":"card Problem","bbox":[710,178,214,120]}
+{"kind":"shape","slide":1,"role":"card accent Problem","bbox":[710,178,6,120]}
+{"kind":"shape","slide":1,"role":"card title Problem","bbox":[732,196,170,24]}
+{"kind":"textbox","slide":1,"role":"card title Problem","text":"Problem","bbox":[732,196,170,24]}
+{"kind":"shape","slide":1,"role":"card body Problem","bbox":[732,230,170,50]}
+{"kind":"textbox","slide":1,"role":"card body Problem","text":"Manual verification is slow and fragmented.","bbox":[732,230,170,50]}
+{"kind":"shape","slide":1,"role":"card Gap","bbox":[970,178,214,120]}
+{"kind":"shape","slide":1,"role":"card accent Gap","bbox":[970,178,6,120]}
+{"kind":"shape","slide":1,"role":"card title Gap","bbox":[992,196,170,24]}
+{"kind":"textbox","slide":1,"role":"card title Gap","text":"Gap","bbox":[992,196,170,24]}
+{"kind":"shape","slide":1,"role":"card body Gap","bbox":[992,230,170,50]}
+{"kind":"textbox","slide":1,"role":"card body Gap","text":"Ordinary tools do not connect verdicts, evidence, and workflow.","bbox":[992,230,170,50]}
+{"kind":"shape","slide":1,"role":"card Approach","bbox":[710,342,214,120]}
+{"kind":"shape","slide":1,"role":"card accent Approach","bbox":[710,342,6,120]}
+{"kind":"shape","slide":1,"role":"card title Approach","bbox":[732,360,170,24]}
+{"kind":"textbox","slide":1,"role":"card title Approach","text":"Approach","bbox":[732,360,170,24]}
+{"kind":"shape","slide":1,"role":"card body Approach","bbox":[732,394,170,50]}
+{"kind":"textbox","slide":1,"role":"card body Approach","text":"Classify, retrieve, reason, explain, and operationalize.","bbox":[732,394,170,50]}
+{"kind":"shape","slide":1,"role":"card Product","bbox":[970,342,214,120]}
+{"kind":"shape","slide":1,"role":"card accent Product","bbox":[970,342,6,120]}
+{"kind":"shape","slide":1,"role":"card title Product","bbox":[992,360,170,24]}
+{"kind":"textbox","slide":1,"role":"card title Product","text":"Product","bbox":[992,360,170,24]}
+{"kind":"shape","slide":1,"role":"card body Product","bbox":[992,394,170,50]}
+{"kind":"textbox","slide":1,"role":"card body Product","text":"Reports, team review, settings, and analyst handoff.","bbox":[992,394,170,50]}
+{"kind":"shape","slide":1,"role":"footer left","bbox":[64,683,780,16]}
+{"kind":"textbox","slide":1,"role":"footer left","text":"FactShield final presentation","bbox":[64,683,780,16]}
+{"kind":"shape","slide":1,"role":"footer right","bbox":[940,683,270,16]}
+{"kind":"textbox","slide":1,"role":"footer right","text":"April 28, 2026","bbox":[940,683,270,16]}
+{"kind":"shape","slide":2,"role":"background","bbox":[0,0,1280,720]}
+{"kind":"shape","slide":2,"role":"top strip","bbox":[0,0,1280,106]}
+{"kind":"shape","slide":2,"role":"glow right","bbox":[948,-132,410,410]}
+{"kind":"shape","slide":2,"role":"glow left","bbox":[-118,472,360,360]}
+{"kind":"shape","slide":2,"role":"footer band","bbox":[0,670,1280,50]}
+{"kind":"shape","slide":2,"role":"section","bbox":[64,38,220,20]}
+{"kind":"textbox","slide":2,"role":"section","text":"PROBLEM STATEMENT","bbox":[64,38,220,20]}
+{"kind":"shape","slide":2,"role":"page","bbox":[1090,38,120,20]}
+{"kind":"textbox","slide":2,"role":"page","text":"02 / 12","bbox":[1090,38,120,20]}
+{"kind":"shape","slide":2,"role":"header rule","bbox":[64,64,1152,2]}
+{"kind":"shape","slide":2,"role":"title","bbox":[64,88,760,104]}
+{"kind":"textbox","slide":2,"role":"title","text":"Why misinformation verification is difficult in practice","bbox":[64,88,760,104]}
+{"kind":"shape","slide":2,"role":"subtitle","bbox":[66,188,760,58]}
+{"kind":"textbox","slide":2,"role":"subtitle","text":"Claims spread quickly across text, screenshots, and short videos, but reliable verification still depends on slow manual evidence collection and interpretation.","bbox":[66,188,760,58]}
+{"kind":"shape","slide":2,"role":"card Speed mismatch","bbox":[64,274,356,180]}
+{"kind":"shape","slide":2,"role":"card accent Speed mismatch","bbox":[64,274,6,180]}
+{"kind":"shape","slide":2,"role":"card title Speed mismatch","bbox":[86,292,312,24]}
+{"kind":"textbox","slide":2,"role":"card title Speed mismatch","text":"Speed mismatch","bbox":[86,292,312,24]}
+{"kind":"shape","slide":2,"role":"card body Speed mismatch","bbox":[86,326,312,110]}
+{"kind":"textbox","slide":2,"role":"card body Speed mismatch","text":"False or misleading content spreads in minutes, while manual cross-checking often takes much longer.","bbox":[86,326,312,110]}
+{"kind":"shape","slide":2,"role":"card Evidence fragmentation","bbox":[462,274,356,180]}
+{"kind":"shape","slide":2,"role":"card accent Evidence fragmentation","bbox":[462,274,6,180]}
+{"kind":"shape","slide":2,"role":"card title Evidence fragmentation","bbox":[484,292,312,24]}
+{"kind":"textbox","slide":2,"role":"card title Evidence fragmentation","text":"Evidence fragmentation","bbox":[484,292,312,24]}
+{"kind":"shape","slide":2,"role":"card body Evidence fragmentation","bbox":[484,326,312,110]}
+{"kind":"textbox","slide":2,"role":"card body Evidence fragmentation","text":"Sources, screenshots, and notes get scattered across tabs, chats, and ad hoc documents.","bbox":[484,326,312,110]}
+{"kind":"shape","slide":2,"role":"card Low explainability","bbox":[860,274,356,180]}
+{"kind":"shape","slide":2,"role":"card accent Low explainability","bbox":[860,274,6,180]}
+{"kind":"shape","slide":2,"role":"card title Low explainability","bbox":[882,292,312,24]}
+{"kind":"textbox","slide":2,"role":"card title Low explainability","text":"Low explainability","bbox":[882,292,312,24]}
+{"kind":"shape","slide":2,"role":"card body Low explainability","bbox":[882,326,312,110]}
+{"kind":"textbox","slide":2,"role":"card body Low explainability","text":"A simple label is not enough when an analyst must justify why a claim was supported or refuted.","bbox":[882,326,312,110]}
+{"kind":"shape","slide":2,"role":"problem strip","bbox":[64,500,1152,122]}
+{"kind":"shape","slide":2,"role":"label CORE CHALLENGE","bbox":[92,528,220,16]}
+{"kind":"textbox","slide":2,"role":"label CORE CHALLENGE","text":"CORE CHALLENGE","bbox":[92,528,220,16]}
+{"kind":"shape","slide":2,"role":"challenge text","bbox":[92,556,1020,34]}
+{"kind":"textbox","slide":2,"role":"challenge text","text":"We need a system that reduces verification time while preserving evidence quality, reasoning transparency, and an auditable review workflow.","bbox":[92,556,1020,34]}
+{"kind":"shape","slide":2,"role":"footer left","bbox":[64,683,780,16]}
+{"kind":"textbox","slide":2,"role":"footer left","text":"The project is motivated by workflow failure, not only model accuracy.","bbox":[64,683,780,16]}
+{"kind":"shape","slide":2,"role":"footer right","bbox":[940,683,270,16]}
+{"kind":"textbox","slide":2,"role":"footer right","text":"Problem framing","bbox":[940,683,270,16]}
+{"kind":"shape","slide":3,"role":"background","bbox":[0,0,1280,720]}
+{"kind":"shape","slide":3,"role":"top strip","bbox":[0,0,1280,106]}
+{"kind":"shape","slide":3,"role":"glow right","bbox":[948,-132,410,410]}
+{"kind":"shape","slide":3,"role":"glow left","bbox":[-118,472,360,360]}
+{"kind":"shape","slide":3,"role":"footer band","bbox":[0,670,1280,50]}
+{"kind":"shape","slide":3,"role":"section","bbox":[64,38,220,20]}
+{"kind":"textbox","slide":3,"role":"section","text":"GAP ANALYSIS","bbox":[64,38,220,20]}
+{"kind":"shape","slide":3,"role":"page","bbox":[1090,38,120,20]}
+{"kind":"textbox","slide":3,"role":"page","text":"03 / 12","bbox":[1090,38,120,20]}
+{"kind":"shape","slide":3,"role":"header rule","bbox":[64,64,1152,2]}
+{"kind":"shape","slide":3,"role":"title","bbox":[64,88,760,104]}
+{"kind":"textbox","slide":3,"role":"title","text":"What is missing in common verification setups","bbox":[64,88,760,104]}
+{"kind":"shape","slide":3,"role":"subtitle","bbox":[66,188,760,58]}
+{"kind":"textbox","slide":3,"role":"subtitle","text":"The gap is not just weak classification. The deeper gap is the absence of a unified pipeline from intake to evidence to final reporting.","bbox":[66,188,760,58]}
+{"kind":"shape","slide":3,"role":"gap matrix","bbox":[64,280,1148,322]}
+{"kind":"shape","slide":3,"role":"gap header 0","bbox":[92,304,220,20]}
+{"kind":"textbox","slide":3,"role":"gap header 0","text":"Current approach","bbox":[92,304,220,20]}
+{"kind":"shape","slide":3,"role":"gap header 1","bbox":[362,304,220,20]}
+{"kind":"textbox","slide":3,"role":"gap header 1","text":"Observed gap","bbox":[362,304,220,20]}
+{"kind":"shape","slide":3,"role":"gap header 2","bbox":[632,304,220,20]}
+{"kind":"textbox","slide":3,"role":"gap header 2","text":"What FactShield adds","bbox":[632,304,220,20]}
+{"kind":"shape","slide":3,"role":"gap header 3","bbox":[902,304,220,20]}
+{"kind":"textbox","slide":3,"role":"gap header 3","text":"Outcome","bbox":[902,304,220,20]}
+{"kind":"shape","slide":3,"role":"gap rule 0","bbox":[84,342,1110,1]}
+{"kind":"shape","slide":3,"role":"gap row 0 col 0","bbox":[92,354,230,42]}
+{"kind":"textbox","slide":3,"role":"gap row 0 col 0","text":"Manual article search","bbox":[92,354,230,42]}
+{"kind":"shape","slide":3,"role":"gap row 0 col 1","bbox":[362,354,230,42]}
+{"kind":"textbox","slide":3,"role":"gap row 0 col 1","text":"Evidence gathering is slow and inconsistent.","bbox":[362,354,230,42]}
+{"kind":"shape","slide":3,"role":"gap row 0 col 2","bbox":[632,354,230,42]}
+{"kind":"textbox","slide":3,"role":"gap row 0 col 2","text":"Retrieval with FAISS and reranking.","bbox":[632,354,230,42]}
+{"kind":"shape","slide":3,"role":"gap row 0 col 3","bbox":[902,354,230,42]}
+{"kind":"textbox","slide":3,"role":"gap row 0 col 3","text":"Faster evidence surfacing","bbox":[902,354,230,42]}
+{"kind":"shape","slide":3,"role":"gap rule 1","bbox":[84,420,1110,1]}
+{"kind":"shape","slide":3,"role":"gap row 1 col 0","bbox":[92,432,230,42]}
+{"kind":"textbox","slide":3,"role":"gap row 1 col 0","text":"Label-only classifier","bbox":[92,432,230,42]}
+{"kind":"shape","slide":3,"role":"gap row 1 col 1","bbox":[362,432,230,42]}
+{"kind":"textbox","slide":3,"role":"gap row 1 col 1","text":"Users cannot justify the output.","bbox":[362,432,230,42]}
+{"kind":"shape","slide":3,"role":"gap row 1 col 2","bbox":[632,432,230,42]}
+{"kind":"textbox","slide":3,"role":"gap row 1 col 2","text":"Debate verdict plus trace and evidence tabs.","bbox":[632,432,230,42]}
+{"kind":"shape","slide":3,"role":"gap row 1 col 3","bbox":[902,432,230,42]}
+{"kind":"textbox","slide":3,"role":"gap row 1 col 3","text":"Explainable decision support","bbox":[902,432,230,42]}
+{"kind":"shape","slide":3,"role":"gap rule 2","bbox":[84,498,1110,1]}
+{"kind":"shape","slide":3,"role":"gap row 2 col 0","bbox":[92,510,230,42]}
+{"kind":"textbox","slide":3,"role":"gap row 2 col 0","text":"Static dashboards","bbox":[92,510,230,42]}
+{"kind":"shape","slide":3,"role":"gap row 2 col 1","bbox":[362,510,230,42]}
+{"kind":"textbox","slide":3,"role":"gap row 2 col 1","text":"No operational handoff after analysis.","bbox":[362,510,230,42]}
+{"kind":"shape","slide":3,"role":"gap row 2 col 2","bbox":[632,510,230,42]}
+{"kind":"textbox","slide":3,"role":"gap row 2 col 2","text":"Reports, team assignment, settings, export.","bbox":[632,510,230,42]}
+{"kind":"shape","slide":3,"role":"gap row 2 col 3","bbox":[902,510,230,42]}
+{"kind":"textbox","slide":3,"role":"gap row 2 col 3","text":"Usable SaaS workflow","bbox":[902,510,230,42]}
+{"kind":"shape","slide":3,"role":"footer left","bbox":[64,683,780,16]}
+{"kind":"textbox","slide":3,"role":"footer left","text":"This slide turns the project into a clear design response to an identified gap.","bbox":[64,683,780,16]}
+{"kind":"shape","slide":3,"role":"footer right","bbox":[940,683,270,16]}
+{"kind":"textbox","slide":3,"role":"footer right","text":"Gap analysis","bbox":[940,683,270,16]}
+{"kind":"shape","slide":4,"role":"background","bbox":[0,0,1280,720]}
+{"kind":"shape","slide":4,"role":"top strip","bbox":[0,0,1280,106]}
+{"kind":"shape","slide":4,"role":"glow right","bbox":[948,-132,410,410]}
+{"kind":"shape","slide":4,"role":"glow left","bbox":[-118,472,360,360]}
+{"kind":"shape","slide":4,"role":"footer band","bbox":[0,670,1280,50]}
+{"kind":"shape","slide":4,"role":"section","bbox":[64,38,220,20]}
+{"kind":"textbox","slide":4,"role":"section","text":"OUR APPROACH","bbox":[64,38,220,20]}
+{"kind":"shape","slide":4,"role":"page","bbox":[1090,38,120,20]}
+{"kind":"textbox","slide":4,"role":"page","text":"04 / 12","bbox":[1090,38,120,20]}
+{"kind":"shape","slide":4,"role":"header rule","bbox":[64,64,1152,2]}
+{"kind":"shape","slide":4,"role":"title","bbox":[64,88,760,104]}
+{"kind":"textbox","slide":4,"role":"title","text":"Proposed solution: an end-to-end verification workspace","bbox":[64,88,760,104]}
+{"kind":"shape","slide":4,"role":"subtitle","bbox":[66,188,760,58]}
+{"kind":"textbox","slide":4,"role":"subtitle","text":"FactShield combines machine learning, retrieval, reasoning, and analyst operations so verification can move from raw claim to final report inside one system.","bbox":[66,188,760,58]}
+{"kind":"shape","slide":4,"role":"node Ingest","bbox":[64,302,220,140]}
+{"kind":"shape","slide":4,"role":"node badge Ingest","bbox":[82,320,28,28]}
+{"kind":"shape","slide":4,"role":"node index Ingest","bbox":[91,328,10,12]}
+{"kind":"textbox","slide":4,"role":"node index Ingest","text":"1","bbox":[91,328,10,12]}
+{"kind":"shape","slide":4,"role":"node title Ingest","bbox":[122,320,146,20]}
+{"kind":"textbox","slide":4,"role":"node title Ingest","text":"Ingest","bbox":[122,320,146,20]}
+{"kind":"shape","slide":4,"role":"node body Ingest","bbox":[82,360,184,68]}
+{"kind":"textbox","slide":4,"role":"node body Ingest","text":"Accept claim text, image OCR output, or extracted video transcript.","bbox":[82,360,184,68]}
+{"kind":"shape","slide":4,"role":"node Analyze","bbox":[316,302,220,140]}
+{"kind":"shape","slide":4,"role":"node badge Analyze","bbox":[334,320,28,28]}
+{"kind":"shape","slide":4,"role":"node index Analyze","bbox":[343,328,10,12]}
+{"kind":"textbox","slide":4,"role":"node index Analyze","text":"2","bbox":[343,328,10,12]}
+{"kind":"shape","slide":4,"role":"node title Analyze","bbox":[374,320,146,20]}
+{"kind":"textbox","slide":4,"role":"node title Analyze","text":"Analyze","bbox":[374,320,146,20]}
+{"kind":"shape","slide":4,"role":"node body Analyze","bbox":[334,360,184,68]}
+{"kind":"textbox","slide":4,"role":"node body Analyze","text":"Classify veracity and toxicity, then trigger search and retrieval when needed.","bbox":[334,360,184,68]}
+{"kind":"shape","slide":4,"role":"node Reason","bbox":[568,302,220,140]}
+{"kind":"shape","slide":4,"role":"node badge Reason","bbox":[586,320,28,28]}
+{"kind":"shape","slide":4,"role":"node index Reason","bbox":[595,328,10,12]}
+{"kind":"textbox","slide":4,"role":"node index Reason","text":"3","bbox":[595,328,10,12]}
+{"kind":"shape","slide":4,"role":"node title Reason","bbox":[626,320,146,20]}
+{"kind":"textbox","slide":4,"role":"node title Reason","text":"Reason","bbox":[626,320,146,20]}
+{"kind":"shape","slide":4,"role":"node body Reason","bbox":[586,360,184,68]}
+{"kind":"textbox","slide":4,"role":"node body Reason","text":"Use a structured debate to synthesize the final verdict.","bbox":[586,360,184,68]}
+{"kind":"shape","slide":4,"role":"node Explain","bbox":[820,302,220,140]}
+{"kind":"shape","slide":4,"role":"node badge Explain","bbox":[838,320,28,28]}
+{"kind":"shape","slide":4,"role":"node index Explain","bbox":[847,328,10,12]}
+{"kind":"textbox","slide":4,"role":"node index Explain","text":"4","bbox":[847,328,10,12]}
+{"kind":"shape","slide":4,"role":"node title Explain","bbox":[878,320,146,20]}
+{"kind":"textbox","slide":4,"role":"node title Explain","text":"Explain","bbox":[878,320,146,20]}
+{"kind":"shape","slide":4,"role":"node body Explain","bbox":[838,360,184,68]}
+{"kind":"textbox","slide":4,"role":"node body Explain","text":"Surface evidence, traces, and report-ready notes.","bbox":[838,360,184,68]}
+{"kind":"shape","slide":4,"role":"node Operate","bbox":[1072,302,144,140]}
+{"kind":"shape","slide":4,"role":"node badge Operate","bbox":[1090,320,28,28]}
+{"kind":"shape","slide":4,"role":"node index Operate","bbox":[1099,328,10,12]}
+{"kind":"textbox","slide":4,"role":"node index Operate","text":"5","bbox":[1099,328,10,12]}
+{"kind":"shape","slide":4,"role":"node title Operate","bbox":[1130,320,70,20]}
+{"kind":"textbox","slide":4,"role":"node title Operate","text":"Operate","bbox":[1130,320,70,20]}
+{"kind":"shape","slide":4,"role":"node body Operate","bbox":[1090,360,108,68]}
+{"kind":"textbox","slide":4,"role":"node body Operate","text":"Assign, export, and review.","bbox":[1090,360,108,68]}
+{"kind":"shape","slide":4,"role":"arrow line","bbox":[288,370,12,3]}
+{"kind":"shape","slide":4,"role":"arrow head","bbox":[288,364,18,14]}
+{"kind":"shape","slide":4,"role":"arrow line","bbox":[540,370,12,3]}
+{"kind":"shape","slide":4,"role":"arrow head","bbox":[540,364,18,14]}
+{"kind":"shape","slide":4,"role":"arrow line","bbox":[792,370,12,3]}
+{"kind":"shape","slide":4,"role":"arrow head","bbox":[792,364,18,14]}
+{"kind":"shape","slide":4,"role":"arrow line","bbox":[1044,370,12,3]}
+{"kind":"shape","slide":4,"role":"arrow head","bbox":[1044,364,18,14]}
+{"kind":"shape","slide":4,"role":"card Design objective 1","bbox":[64,500,356,110]}
+{"kind":"shape","slide":4,"role":"card accent Design objective 1","bbox":[64,500,6,110]}
+{"kind":"shape","slide":4,"role":"card title Design objective 1","bbox":[86,518,312,24]}
+{"kind":"textbox","slide":4,"role":"card title Design objective 1","text":"Design objective 1","bbox":[86,518,312,24]}
+{"kind":"shape","slide":4,"role":"card body Design objective 1","bbox":[86,552,312,40]}
+{"kind":"textbox","slide":4,"role":"card body Design objective 1","text":"Reduce analyst effort without hiding the reasoning path.","bbox":[86,552,312,40]}
+{"kind":"shape","slide":4,"role":"card Design objective 2","bbox":[462,500,356,110]}
+{"kind":"shape","slide":4,"role":"card accent Design objective 2","bbox":[462,500,6,110]}
+{"kind":"shape","slide":4,"role":"card title Design objective 2","bbox":[484,518,312,24]}
+{"kind":"textbox","slide":4,"role":"card title Design objective 2","text":"Design objective 2","bbox":[484,518,312,24]}
+{"kind":"shape","slide":4,"role":"card body Design objective 2","bbox":[484,552,312,40]}
+{"kind":"textbox","slide":4,"role":"card body Design objective 2","text":"Connect verification outputs to persistent reports and review workflows.","bbox":[484,552,312,40]}
+{"kind":"shape","slide":4,"role":"card Design objective 3","bbox":[860,500,356,110]}
+{"kind":"shape","slide":4,"role":"card accent Design objective 3","bbox":[860,500,6,110]}
+{"kind":"shape","slide":4,"role":"card title Design objective 3","bbox":[882,518,312,24]}
+{"kind":"textbox","slide":4,"role":"card title Design objective 3","text":"Design objective 3","bbox":[882,518,312,24]}
+{"kind":"shape","slide":4,"role":"card body Design objective 3","bbox":[882,552,312,40]}
+{"kind":"textbox","slide":4,"role":"card body Design objective 3","text":"Present results through a modern SaaS interface rather than disconnected scripts.","bbox":[882,552,312,40]}
+{"kind":"shape","slide":4,"role":"footer left","bbox":[64,683,780,16]}
+{"kind":"textbox","slide":4,"role":"footer left","text":"This is the high-level answer to the gap slide.","bbox":[64,683,780,16]}
+{"kind":"shape","slide":4,"role":"footer right","bbox":[940,683,270,16]}
+{"kind":"textbox","slide":4,"role":"footer right","text":"Approach overview","bbox":[940,683,270,16]}
+{"kind":"shape","slide":5,"role":"background","bbox":[0,0,1280,720]}
+{"kind":"shape","slide":5,"role":"top strip","bbox":[0,0,1280,106]}
+{"kind":"shape","slide":5,"role":"glow right","bbox":[948,-132,410,410]}
+{"kind":"shape","slide":5,"role":"glow left","bbox":[-118,472,360,360]}
+{"kind":"shape","slide":5,"role":"footer band","bbox":[0,670,1280,50]}
+{"kind":"shape","slide":5,"role":"section","bbox":[64,38,220,20]}
+{"kind":"textbox","slide":5,"role":"section","text":"ARCHITECTURE","bbox":[64,38,220,20]}
+{"kind":"shape","slide":5,"role":"page","bbox":[1090,38,120,20]}
+{"kind":"textbox","slide":5,"role":"page","text":"05 / 12","bbox":[1090,38,120,20]}
+{"kind":"shape","slide":5,"role":"header rule","bbox":[64,64,1152,2]}
+{"kind":"shape","slide":5,"role":"title","bbox":[64,88,760,104]}
+{"kind":"textbox","slide":5,"role":"title","text":"System architecture","bbox":[64,88,760,104]}
+{"kind":"shape","slide":5,"role":"subtitle","bbox":[66,188,760,58]}
+{"kind":"textbox","slide":5,"role":"subtitle","text":"The system is organized as a frontend workspace, a FastAPI backend, and a verification pipeline with persistence and retrieval services.","bbox":[66,188,760,58]}
+{"kind":"shape","slide":5,"role":"card Frontend SaaS","bbox":[64,278,250,132]}
+{"kind":"shape","slide":5,"role":"card accent Frontend SaaS","bbox":[64,278,6,132]}
+{"kind":"shape","slide":5,"role":"card title Frontend SaaS","bbox":[86,296,206,24]}
+{"kind":"textbox","slide":5,"role":"card title Frontend SaaS","text":"Frontend SaaS","bbox":[86,296,206,24]}
+{"kind":"shape","slide":5,"role":"card body Frontend SaaS","bbox":[86,330,206,62]}
+{"kind":"textbox","slide":5,"role":"card body Frontend SaaS","text":"Command center, reports, team, settings, archive, and review surfaces.","bbox":[86,330,206,62]}
+{"kind":"shape","slide":5,"role":"card Operator actions","bbox":[64,468,250,132]}
+{"kind":"shape","slide":5,"role":"card accent Operator actions","bbox":[64,468,6,132]}
+{"kind":"shape","slide":5,"role":"card title Operator actions","bbox":[86,486,206,24]}
+{"kind":"textbox","slide":5,"role":"card title Operator actions","text":"Operator actions","bbox":[86,486,206,24]}
+{"kind":"shape","slide":5,"role":"card body Operator actions","bbox":[86,520,206,62]}
+{"kind":"textbox","slide":5,"role":"card body Operator actions","text":"Paste claims, open reports, assign investigations, export briefings.","bbox":[86,520,206,62]}
+{"kind":"shape","slide":5,"role":"card FastAPI orchestration layer","bbox":[380,232,520,112]}
+{"kind":"shape","slide":5,"role":"card accent FastAPI orchestration layer","bbox":[380,232,6,112]}
+{"kind":"shape","slide":5,"role":"card title FastAPI orchestration layer","bbox":[402,250,476,24]}
+{"kind":"textbox","slide":5,"role":"card title FastAPI orchestration layer","text":"FastAPI orchestration layer","bbox":[402,250,476,24]}
+{"kind":"shape","slide":5,"role":"card body FastAPI orchestration layer","bbox":[402,284,476,42]}
+{"kind":"textbox","slide":5,"role":"card body FastAPI orchestration layer","text":"Receives verification requests, manages task state, exposes feed and workspace APIs, and returns structured results.","bbox":[402,284,476,42]}
+{"kind":"shape","slide":5,"role":"card Verification pipeline","bbox":[380,372,520,112]}
+{"kind":"shape","slide":5,"role":"card accent Verification pipeline","bbox":[380,372,6,112]}
+{"kind":"shape","slide":5,"role":"card title Verification pipeline","bbox":[402,390,476,24]}
+{"kind":"textbox","slide":5,"role":"card title Verification pipeline","text":"Verification pipeline","bbox":[402,390,476,24]}
+{"kind":"shape","slide":5,"role":"card body Verification pipeline","bbox":[402,424,476,42]}
+{"kind":"textbox","slide":5,"role":"card body Verification pipeline","text":"Classification, search, FAISS retrieval, reranking, debate reasoning, and explainability.","bbox":[402,424,476,42]}
+{"kind":"shape","slide":5,"role":"card Persistence and services","bbox":[380,512,520,112]}
+{"kind":"shape","slide":5,"role":"card accent Persistence and services","bbox":[380,512,6,112]}
+{"kind":"shape","slide":5,"role":"card title Persistence and services","bbox":[402,530,476,24]}
+{"kind":"textbox","slide":5,"role":"card title Persistence and services","text":"Persistence and services","bbox":[402,530,476,24]}
+{"kind":"shape","slide":5,"role":"card body Persistence and services","bbox":[402,564,476,42]}
+{"kind":"textbox","slide":5,"role":"card body Persistence and services","text":"SQLite tasks, workspace state, result export, cache, and rate limits.","bbox":[402,564,476,42]}
+{"kind":"shape","slide":5,"role":"card External evidence","bbox":[966,278,250,132]}
+{"kind":"shape","slide":5,"role":"card accent External evidence","bbox":[966,278,6,132]}
+{"kind":"shape","slide":5,"role":"card title External evidence","bbox":[988,296,206,24]}
+{"kind":"textbox","slide":5,"role":"card title External evidence","text":"External evidence","bbox":[988,296,206,24]}
+{"kind":"shape","slide":5,"role":"card body External evidence","bbox":[988,330,206,62]}
+{"kind":"textbox","slide":5,"role":"card body External evidence","text":"Trusted article sources and retrieved candidate evidence.","bbox":[988,330,206,62]}
+{"kind":"shape","slide":5,"role":"card Outputs","bbox":[966,468,250,132]}
+{"kind":"shape","slide":5,"role":"card accent Outputs","bbox":[966,468,6,132]}
+{"kind":"shape","slide":5,"role":"card title Outputs","bbox":[988,486,206,24]}
+{"kind":"textbox","slide":5,"role":"card title Outputs","text":"Outputs","bbox":[988,486,206,24]}
+{"kind":"shape","slide":5,"role":"card body Outputs","bbox":[988,520,206,62]}
+{"kind":"textbox","slide":5,"role":"card body Outputs","text":"Verdict, evidence, reports, team assignment, and settings-aware workflow.","bbox":[988,520,206,62]}
+{"kind":"shape","slide":5,"role":"arrow line","bbox":[318,334,38,3]}
+{"kind":"shape","slide":5,"role":"arrow head","bbox":[350,328,18,14]}
+{"kind":"shape","slide":5,"role":"arrow line","bbox":[900,334,38,3]}
+{"kind":"shape","slide":5,"role":"arrow head","bbox":[932,328,18,14]}
+{"kind":"shape","slide":5,"role":"arrow line","bbox":[318,524,38,3]}
+{"kind":"shape","slide":5,"role":"arrow head","bbox":[350,518,18,14]}
+{"kind":"shape","slide":5,"role":"arrow line","bbox":[900,524,38,3]}
+{"kind":"shape","slide":5,"role":"arrow head","bbox":[932,518,18,14]}
+{"kind":"shape","slide":5,"role":"vertical stack connector","bbox":[638,346,4,24]}
+{"kind":"shape","slide":5,"role":"vertical stack connector","bbox":[638,486,4,24]}
+{"kind":"shape","slide":5,"role":"footer left","bbox":[64,683,780,16]}
+{"kind":"textbox","slide":5,"role":"footer left","text":"This slide is your static architecture diagram for the viva-style part of the presentation.","bbox":[64,683,780,16]}
+{"kind":"shape","slide":5,"role":"footer right","bbox":[940,683,270,16]}
+{"kind":"textbox","slide":5,"role":"footer right","text":"System view","bbox":[940,683,270,16]}
+{"kind":"shape","slide":6,"role":"background","bbox":[0,0,1280,720]}
+{"kind":"shape","slide":6,"role":"top strip","bbox":[0,0,1280,106]}
+{"kind":"shape","slide":6,"role":"glow right","bbox":[948,-132,410,410]}
+{"kind":"shape","slide":6,"role":"glow left","bbox":[-118,472,360,360]}
+{"kind":"shape","slide":6,"role":"footer band","bbox":[0,670,1280,50]}
+{"kind":"shape","slide":6,"role":"section","bbox":[64,38,220,20]}
+{"kind":"textbox","slide":6,"role":"section","text":"FLOWCHART","bbox":[64,38,220,20]}
+{"kind":"shape","slide":6,"role":"page","bbox":[1090,38,120,20]}
+{"kind":"textbox","slide":6,"role":"page","text":"06 / 12","bbox":[1090,38,120,20]}
+{"kind":"shape","slide":6,"role":"header rule","bbox":[64,64,1152,2]}
+{"kind":"shape","slide":6,"role":"title","bbox":[64,88,760,104]}
+{"kind":"textbox","slide":6,"role":"title","text":"Verification pipeline flow","bbox":[64,88,760,104]}
+{"kind":"shape","slide":6,"role":"subtitle","bbox":[66,188,760,58]}
+{"kind":"textbox","slide":6,"role":"subtitle","text":"This is the logic path that turns an incoming claim into an explainable verdict.","bbox":[66,188,760,58]}
+{"kind":"shape","slide":6,"role":"node Input","bbox":[64,308,186,144]}
+{"kind":"shape","slide":6,"role":"node badge Input","bbox":[82,326,28,28]}
+{"kind":"shape","slide":6,"role":"node index Input","bbox":[91,334,10,12]}
+{"kind":"textbox","slide":6,"role":"node index Input","text":"1","bbox":[91,334,10,12]}
+{"kind":"shape","slide":6,"role":"node title Input","bbox":[122,326,112,20]}
+{"kind":"textbox","slide":6,"role":"node title Input","text":"Input","bbox":[122,326,112,20]}
+{"kind":"shape","slide":6,"role":"node body Input","bbox":[82,366,150,72]}
+{"kind":"textbox","slide":6,"role":"node body Input","text":"User submits text, image, or video-derived text.","bbox":[82,366,150,72]}
+{"kind":"shape","slide":6,"role":"node Classify","bbox":[286,308,186,144]}
+{"kind":"shape","slide":6,"role":"node badge Classify","bbox":[304,326,28,28]}
+{"kind":"shape","slide":6,"role":"node index Classify","bbox":[313,334,10,12]}
+{"kind":"textbox","slide":6,"role":"node index Classify","text":"2","bbox":[313,334,10,12]}
+{"kind":"shape","slide":6,"role":"node title Classify","bbox":[344,326,112,20]}
+{"kind":"textbox","slide":6,"role":"node title Classify","text":"Classify","bbox":[344,326,112,20]}
+{"kind":"shape","slide":6,"role":"node body Classify","bbox":[304,366,150,72]}
+{"kind":"textbox","slide":6,"role":"node body Classify","text":"XLM-R predicts veracity and toxicity priors.","bbox":[304,366,150,72]}
+{"kind":"shape","slide":6,"role":"node Retrieve","bbox":[508,308,186,144]}
+{"kind":"shape","slide":6,"role":"node badge Retrieve","bbox":[526,326,28,28]}
+{"kind":"shape","slide":6,"role":"node index Retrieve","bbox":[535,334,10,12]}
+{"kind":"textbox","slide":6,"role":"node index Retrieve","text":"3","bbox":[535,334,10,12]}
+{"kind":"shape","slide":6,"role":"node title Retrieve","bbox":[566,326,112,20]}
+{"kind":"textbox","slide":6,"role":"node title Retrieve","text":"Retrieve","bbox":[566,326,112,20]}
+{"kind":"shape","slide":6,"role":"node body Retrieve","bbox":[526,366,150,72]}
+{"kind":"textbox","slide":6,"role":"node body Retrieve","text":"Search plus FAISS fetch evidence candidates.","bbox":[526,366,150,72]}
+{"kind":"shape","slide":6,"role":"node Debate","bbox":[730,308,186,144]}
+{"kind":"shape","slide":6,"role":"node badge Debate","bbox":[748,326,28,28]}
+{"kind":"shape","slide":6,"role":"node index Debate","bbox":[757,334,10,12]}
+{"kind":"textbox","slide":6,"role":"node index Debate","text":"4","bbox":[757,334,10,12]}
+{"kind":"shape","slide":6,"role":"node title Debate","bbox":[788,326,112,20]}
+{"kind":"textbox","slide":6,"role":"node title Debate","text":"Debate","bbox":[788,326,112,20]}
+{"kind":"shape","slide":6,"role":"node body Debate","bbox":[748,366,150,72]}
+{"kind":"textbox","slide":6,"role":"node body Debate","text":"Prosecutor, defense, and judge synthesize verdict.","bbox":[748,366,150,72]}
+{"kind":"shape","slide":6,"role":"node Explain","bbox":[952,308,186,144]}
+{"kind":"shape","slide":6,"role":"node badge Explain","bbox":[970,326,28,28]}
+{"kind":"shape","slide":6,"role":"node index Explain","bbox":[979,334,10,12]}
+{"kind":"textbox","slide":6,"role":"node index Explain","text":"5","bbox":[979,334,10,12]}
+{"kind":"shape","slide":6,"role":"node title Explain","bbox":[1010,326,112,20]}
+{"kind":"textbox","slide":6,"role":"node title Explain","text":"Explain","bbox":[1010,326,112,20]}
+{"kind":"shape","slide":6,"role":"node body Explain","bbox":[970,366,150,72]}
+{"kind":"textbox","slide":6,"role":"node body Explain","text":"Evidence tab, trace, notes, and report summary.","bbox":[970,366,150,72]}
+{"kind":"shape","slide":6,"role":"arrow line","bbox":[252,378,12,3]}
+{"kind":"shape","slide":6,"role":"arrow head","bbox":[258,372,18,14]}
+{"kind":"shape","slide":6,"role":"arrow line","bbox":[474,378,12,3]}
+{"kind":"shape","slide":6,"role":"arrow head","bbox":[480,372,18,14]}
+{"kind":"shape","slide":6,"role":"arrow line","bbox":[696,378,12,3]}
+{"kind":"shape","slide":6,"role":"arrow head","bbox":[702,372,18,14]}
+{"kind":"shape","slide":6,"role":"arrow line","bbox":[918,378,12,3]}
+{"kind":"shape","slide":6,"role":"arrow head","bbox":[924,372,18,14]}
+{"kind":"shape","slide":6,"role":"card Decision gate","bbox":[1080,266,136,92]}
+{"kind":"shape","slide":6,"role":"card accent Decision gate","bbox":[1080,266,6,92]}
+{"kind":"shape","slide":6,"role":"card title Decision gate","bbox":[1102,284,92,24]}
+{"kind":"textbox","slide":6,"role":"card title Decision gate","text":"Decision gate","bbox":[1102,284,92,24]}
+{"kind":"shape","slide":6,"role":"card body Decision gate","bbox":[1102,318,92,22]}
+{"kind":"textbox","slide":6,"role":"card body Decision gate","text":"When confidence is weak or uncertain, retrieval becomes more important.","bbox":[1102,318,92,22]}
+{"kind":"shape","slide":6,"role":"card Stored output","bbox":[1080,372,136,92]}
+{"kind":"shape","slide":6,"role":"card accent Stored output","bbox":[1080,372,6,92]}
+{"kind":"shape","slide":6,"role":"card title Stored output","bbox":[1102,390,92,24]}
+{"kind":"textbox","slide":6,"role":"card title Stored output","text":"Stored output","bbox":[1102,390,92,24]}
+{"kind":"shape","slide":6,"role":"card body Stored output","bbox":[1102,424,92,22]}
+{"kind":"textbox","slide":6,"role":"card body Stored output","text":"Results become saved investigations and backend-backed report records.","bbox":[1102,424,92,22]}
+{"kind":"shape","slide":6,"role":"card Why this matters","bbox":[64,516,1152,96]}
+{"kind":"shape","slide":6,"role":"card accent Why this matters","bbox":[64,516,6,96]}
+{"kind":"shape","slide":6,"role":"card title Why this matters","bbox":[86,534,1108,24]}
+{"kind":"textbox","slide":6,"role":"card title Why this matters","text":"Why this matters","bbox":[86,534,1108,24]}
+{"kind":"shape","slide":6,"role":"card body Why this matters","bbox":[86,568,1108,26]}
+{"kind":"textbox","slide":6,"role":"card body Why this matters","text":"The pipeline is designed so that model output is not the final artifact. The final artifact is an evidence-backed, reviewable verification result.","bbox":[86,568,1108,26]}
+{"kind":"shape","slide":6,"role":"footer left","bbox":[64,683,780,16]}
+{"kind":"textbox","slide":6,"role":"footer left","text":"This is the clearest pipeline explanation slide.","bbox":[64,683,780,16]}
+{"kind":"shape","slide":6,"role":"footer right","bbox":[940,683,270,16]}
+{"kind":"textbox","slide":6,"role":"footer right","text":"Verification flow","bbox":[940,683,270,16]}
+{"kind":"shape","slide":7,"role":"background","bbox":[0,0,1280,720]}
+{"kind":"shape","slide":7,"role":"top strip","bbox":[0,0,1280,106]}
+{"kind":"shape","slide":7,"role":"glow right","bbox":[948,-132,410,410]}
+{"kind":"shape","slide":7,"role":"glow left","bbox":[-118,472,360,360]}
+{"kind":"shape","slide":7,"role":"footer band","bbox":[0,670,1280,50]}
+{"kind":"shape","slide":7,"role":"section","bbox":[64,38,220,20]}
+{"kind":"textbox","slide":7,"role":"section","text":"USER WORKFLOW","bbox":[64,38,220,20]}
+{"kind":"shape","slide":7,"role":"page","bbox":[1090,38,120,20]}
+{"kind":"textbox","slide":7,"role":"page","text":"07 / 12","bbox":[1090,38,120,20]}
+{"kind":"shape","slide":7,"role":"header rule","bbox":[64,64,1152,2]}
+{"kind":"shape","slide":7,"role":"title","bbox":[64,88,760,104]}
+{"kind":"textbox","slide":7,"role":"title","text":"How a user moves through FactShield","bbox":[64,88,760,104]}
+{"kind":"shape","slide":7,"role":"subtitle","bbox":[66,188,760,58]}
+{"kind":"textbox","slide":7,"role":"subtitle","text":"This operator workflow shows how the product turns backend intelligence into an actual review process.","bbox":[66,188,760,58]}
+{"kind":"shape","slide":7,"role":"swimlane 1. Verification console","bbox":[64,278,1152,72]}
+{"kind":"shape","slide":7,"role":"swimlane accent 1. Verification console","bbox":[64,278,6,72]}
+{"kind":"shape","slide":7,"role":"swimlane title 1. Verification console","bbox":[86,302,180,20]}
+{"kind":"textbox","slide":7,"role":"swimlane title 1. Verification console","text":"1. Verification console","bbox":[86,302,180,20]}
+{"kind":"shape","slide":7,"role":"workflow line 1","bbox":[304,302,460,18]}
+{"kind":"textbox","slide":7,"role":"workflow line 1","text":"Paste claim or upload media, then start analysis.","bbox":[304,302,460,18]}
+{"kind":"shape","slide":7,"role":"workflow line 1b","bbox":[782,302,360,18]}
+{"kind":"textbox","slide":7,"role":"workflow line 1b","text":"Immediate system response: status, pipeline stage, retrieved evidence.","bbox":[782,302,360,18]}
+{"kind":"shape","slide":7,"role":"swimlane 2. Review queue and investigations","bbox":[64,366,1152,72]}
+{"kind":"shape","slide":7,"role":"swimlane accent 2. Review queue and investigations","bbox":[64,366,6,72]}
+{"kind":"shape","slide":7,"role":"swimlane title 2. Review queue and investigations","bbox":[86,390,180,20]}
+{"kind":"textbox","slide":7,"role":"swimlane title 2. Review queue and investigations","text":"2. Review queue and investigations","bbox":[86,390,180,20]}
+{"kind":"shape","slide":7,"role":"workflow line 2","bbox":[304,390,620,18]}
+{"kind":"textbox","slide":7,"role":"workflow line 2","text":"Open live items, inspect source context, and move cases into investigation handling.","bbox":[304,390,620,18]}
+{"kind":"shape","slide":7,"role":"swimlane 3. Reports, assignment, and settings","bbox":[64,454,1152,72]}
+{"kind":"shape","slide":7,"role":"swimlane accent 3. Reports, assignment, and settings","bbox":[64,454,6,72]}
+{"kind":"shape","slide":7,"role":"swimlane title 3. Reports, assignment, and settings","bbox":[86,478,180,20]}
+{"kind":"textbox","slide":7,"role":"swimlane title 3. Reports, assignment, and settings","text":"3. Reports, assignment, and settings","bbox":[86,478,180,20]}
+{"kind":"shape","slide":7,"role":"workflow line 3","bbox":[304,478,680,18]}
+{"kind":"textbox","slide":7,"role":"workflow line 3","text":"Save metadata, assign investigators, update workspace controls, and export the final report.","bbox":[304,478,680,18]}
+{"kind":"shape","slide":7,"role":"swimlane 4. Delivery and briefing","bbox":[64,542,1152,72]}
+{"kind":"shape","slide":7,"role":"swimlane accent 4. Delivery and briefing","bbox":[64,542,6,72]}
+{"kind":"shape","slide":7,"role":"swimlane title 4. Delivery and briefing","bbox":[86,566,180,20]}
+{"kind":"textbox","slide":7,"role":"swimlane title 4. Delivery and briefing","text":"4. Delivery and briefing","bbox":[86,566,180,20]}
+{"kind":"shape","slide":7,"role":"workflow line 4","bbox":[304,566,710,18]}
+{"kind":"textbox","slide":7,"role":"workflow line 4","text":"Decision-makers receive a downloadable report with verdict, confidence, notes, and evidence summary.","bbox":[304,566,710,18]}
+{"kind":"shape","slide":7,"role":"footer left","bbox":[64,683,780,16]}
+{"kind":"textbox","slide":7,"role":"footer left","text":"Use this slide to connect technical depth to actual product use.","bbox":[64,683,780,16]}
+{"kind":"shape","slide":7,"role":"footer right","bbox":[940,683,270,16]}
+{"kind":"textbox","slide":7,"role":"footer right","text":"User journey","bbox":[940,683,270,16]}
+{"kind":"shape","slide":8,"role":"background","bbox":[0,0,1280,720]}
+{"kind":"shape","slide":8,"role":"top strip","bbox":[0,0,1280,106]}
+{"kind":"shape","slide":8,"role":"glow right","bbox":[948,-132,410,410]}
+{"kind":"shape","slide":8,"role":"glow left","bbox":[-118,472,360,360]}
+{"kind":"shape","slide":8,"role":"footer band","bbox":[0,670,1280,50]}
+{"kind":"shape","slide":8,"role":"section","bbox":[64,38,220,20]}
+{"kind":"textbox","slide":8,"role":"section","text":"PRODUCT","bbox":[64,38,220,20]}
+{"kind":"shape","slide":8,"role":"page","bbox":[1090,38,120,20]}
+{"kind":"textbox","slide":8,"role":"page","text":"08 / 12","bbox":[1090,38,120,20]}
+{"kind":"shape","slide":8,"role":"header rule","bbox":[64,64,1152,2]}
+{"kind":"shape","slide":8,"role":"title","bbox":[64,88,760,104]}
+{"kind":"textbox","slide":8,"role":"title","text":"Implemented SaaS workspace","bbox":[64,88,760,104]}
+{"kind":"shape","slide":8,"role":"subtitle","bbox":[66,188,760,58]}
+{"kind":"textbox","slide":8,"role":"subtitle","text":"We redesigned the frontend to behave like a coherent operator product rather than a disconnected set of screens.","bbox":[66,188,760,58]}
+{"kind":"shape","slide":8,"role":"desktop frame","bbox":[64,274,760,360]}
+{"kind":"image","slide":8,"role":"desktop screenshot","path":"C:\\Users\\ansar\\PycharmProjects\\Majorproject_2.0\\factshield\\frontend-v3\\verification-desktop.png","bbox":[80,290,728,328]}
+{"kind":"shape","slide":8,"role":"mobile frame","bbox":[856,274,300,324]}
+{"kind":"image","slide":8,"role":"mobile screenshot","path":"C:\\Users\\ansar\\PycharmProjects\\Majorproject_2.0\\factshield\\frontend-v3\\verification-mobile.png","bbox":[884,294,244,282]}
+{"kind":"shape","slide":8,"role":"pill REPORTS","bbox":[860,614,116,30]}
+{"kind":"shape","slide":8,"role":"pill text REPORTS","bbox":[874,621,88,15]}
+{"kind":"textbox","slide":8,"role":"pill text REPORTS","text":"REPORTS","bbox":[874,621,88,15]}
+{"kind":"shape","slide":8,"role":"pill TEAM","bbox":[988,614,100,30]}
+{"kind":"shape","slide":8,"role":"pill text TEAM","bbox":[1002,621,72,15]}
+{"kind":"textbox","slide":8,"role":"pill text TEAM","text":"TEAM","bbox":[1002,621,72,15]}
+{"kind":"shape","slide":8,"role":"pill SETTINGS","bbox":[1098,614,114,30]}
+{"kind":"shape","slide":8,"role":"pill text SETTINGS","bbox":[1112,621,86,15]}
+{"kind":"textbox","slide":8,"role":"pill text SETTINGS","text":"SETTINGS","bbox":[1112,621,86,15]}
+{"kind":"shape","slide":8,"role":"footer left","bbox":[64,683,780,16]}
+{"kind":"textbox","slide":8,"role":"footer left","text":"A strong product slide matters because it proves implementation maturity.","bbox":[64,683,780,16]}
+{"kind":"shape","slide":8,"role":"footer right","bbox":[940,683,270,16]}
+{"kind":"textbox","slide":8,"role":"footer right","text":"Frontend redesign","bbox":[940,683,270,16]}
+{"kind":"shape","slide":9,"role":"background","bbox":[0,0,1280,720]}
+{"kind":"shape","slide":9,"role":"top strip","bbox":[0,0,1280,106]}
+{"kind":"shape","slide":9,"role":"glow right","bbox":[948,-132,410,410]}
+{"kind":"shape","slide":9,"role":"glow left","bbox":[-118,472,360,360]}
+{"kind":"shape","slide":9,"role":"footer band","bbox":[0,670,1280,50]}
+{"kind":"shape","slide":9,"role":"section","bbox":[64,38,220,20]}
+{"kind":"textbox","slide":9,"role":"section","text":"IMPLEMENTATION","bbox":[64,38,220,20]}
+{"kind":"shape","slide":9,"role":"page","bbox":[1090,38,120,20]}
+{"kind":"textbox","slide":9,"role":"page","text":"09 / 12","bbox":[1090,38,120,20]}
+{"kind":"shape","slide":9,"role":"header rule","bbox":[64,64,1152,2]}
+{"kind":"shape","slide":9,"role":"title","bbox":[64,88,760,104]}
+{"kind":"textbox","slide":9,"role":"title","text":"Key capabilities delivered","bbox":[64,88,760,104]}
+{"kind":"shape","slide":9,"role":"subtitle","bbox":[66,188,760,58]}
+{"kind":"textbox","slide":9,"role":"subtitle","text":"The project now includes backend-backed workflow features, not only verification endpoints.","bbox":[66,188,760,58]}
+{"kind":"shape","slide":9,"role":"card Report export","bbox":[64,282,356,124]}
+{"kind":"shape","slide":9,"role":"card accent Report export","bbox":[64,282,6,124]}
+{"kind":"shape","slide":9,"role":"card title Report export","bbox":[86,300,312,24]}
+{"kind":"textbox","slide":9,"role":"card title Report export","text":"Report export","bbox":[86,300,312,24]}
+{"kind":"shape","slide":9,"role":"card body Report export","bbox":[86,334,312,54]}
+{"kind":"textbox","slide":9,"role":"card body Report export","text":"Export produces a real downloadable report instead of a visual placeholder button.","bbox":[86,334,312,54]}
+{"kind":"shape","slide":9,"role":"card Saved investigations","bbox":[462,282,356,124]}
+{"kind":"shape","slide":9,"role":"card accent Saved investigations","bbox":[462,282,6,124]}
+{"kind":"shape","slide":9,"role":"card title Saved investigations","bbox":[484,300,312,24]}
+{"kind":"textbox","slide":9,"role":"card title Saved investigations","text":"Saved investigations","bbox":[484,300,312,24]}
+{"kind":"shape","slide":9,"role":"card body Saved investigations","bbox":[484,334,312,54]}
+{"kind":"textbox","slide":9,"role":"card body Saved investigations","text":"Reports are now derived from persisted verification tasks and live backend records.","bbox":[484,334,312,54]}
+{"kind":"shape","slide":9,"role":"card Team assignment","bbox":[860,282,356,124]}
+{"kind":"shape","slide":9,"role":"card accent Team assignment","bbox":[860,282,6,124]}
+{"kind":"shape","slide":9,"role":"card title Team assignment","bbox":[882,300,312,24]}
+{"kind":"textbox","slide":9,"role":"card title Team assignment","text":"Team assignment","bbox":[882,300,312,24]}
+{"kind":"shape","slide":9,"role":"card body Team assignment","bbox":[882,334,312,54]}
+{"kind":"textbox","slide":9,"role":"card body Team assignment","text":"Investigations can be assigned through the Team workspace and persisted.","bbox":[882,334,312,54]}
+{"kind":"shape","slide":9,"role":"card Settings persistence","bbox":[64,434,356,124]}
+{"kind":"shape","slide":9,"role":"card accent Settings persistence","bbox":[64,434,6,124]}
+{"kind":"shape","slide":9,"role":"card title Settings persistence","bbox":[86,452,312,24]}
+{"kind":"textbox","slide":9,"role":"card title Settings persistence","text":"Settings persistence","bbox":[86,452,312,24]}
+{"kind":"shape","slide":9,"role":"card body Settings persistence","bbox":[86,486,312,54]}
+{"kind":"textbox","slide":9,"role":"card body Settings persistence","text":"Workspace controls save status, detail, and value instead of staying static.","bbox":[86,486,312,54]}
+{"kind":"shape","slide":9,"role":"card Approval workflow","bbox":[462,434,356,124]}
+{"kind":"shape","slide":9,"role":"card accent Approval workflow","bbox":[462,434,6,124]}
+{"kind":"shape","slide":9,"role":"card title Approval workflow","bbox":[484,452,312,24]}
+{"kind":"textbox","slide":9,"role":"card title Approval workflow","text":"Approval workflow","bbox":[484,452,312,24]}
+{"kind":"shape","slide":9,"role":"card body Approval workflow","bbox":[484,486,312,54]}
+{"kind":"textbox","slide":9,"role":"card body Approval workflow","text":"Reports store owner, audience, approval status, reviewer identity, notes, and export metadata.","bbox":[484,486,312,54]}
+{"kind":"shape","slide":9,"role":"card Text normalization","bbox":[860,434,356,124]}
+{"kind":"shape","slide":9,"role":"card accent Text normalization","bbox":[860,434,6,124]}
+{"kind":"shape","slide":9,"role":"card title Text normalization","bbox":[882,452,312,24]}
+{"kind":"textbox","slide":9,"role":"card title Text normalization","text":"Text normalization","bbox":[882,452,312,24]}
+{"kind":"shape","slide":9,"role":"card body Text normalization","bbox":[882,486,312,54]}
+{"kind":"textbox","slide":9,"role":"card body Text normalization","text":"Historic stored payloads were cleaned so report-facing text remains presentation-ready.","bbox":[882,486,312,54]}
+{"kind":"shape","slide":9,"role":"footer left","bbox":[64,683,780,16]}
+{"kind":"textbox","slide":9,"role":"footer left","text":"This is the implementation-summary slide for the product engineering part.","bbox":[64,683,780,16]}
+{"kind":"shape","slide":9,"role":"footer right","bbox":[940,683,270,16]}
+{"kind":"textbox","slide":9,"role":"footer right","text":"Delivered work","bbox":[940,683,270,16]}
+{"kind":"shape","slide":10,"role":"background","bbox":[0,0,1280,720]}
+{"kind":"shape","slide":10,"role":"top strip","bbox":[0,0,1280,106]}
+{"kind":"shape","slide":10,"role":"glow right","bbox":[948,-132,410,410]}
+{"kind":"shape","slide":10,"role":"glow left","bbox":[-118,472,360,360]}
+{"kind":"shape","slide":10,"role":"footer band","bbox":[0,670,1280,50]}
+{"kind":"shape","slide":10,"role":"section","bbox":[64,38,220,20]}
+{"kind":"textbox","slide":10,"role":"section","text":"VALIDATION","bbox":[64,38,220,20]}
+{"kind":"shape","slide":10,"role":"page","bbox":[1090,38,120,20]}
+{"kind":"textbox","slide":10,"role":"page","text":"10 / 12","bbox":[1090,38,120,20]}
+{"kind":"shape","slide":10,"role":"header rule","bbox":[64,64,1152,2]}
+{"kind":"shape","slide":10,"role":"title","bbox":[64,88,760,104]}
+{"kind":"textbox","slide":10,"role":"title","text":"Scenario testing before presentation","bbox":[64,88,760,104]}
+{"kind":"shape","slide":10,"role":"subtitle","bbox":[66,188,760,58]}
+{"kind":"textbox","slide":10,"role":"subtitle","text":"We tested a short set of claims against the live backend to identify strong demo paths and risky edge cases.","bbox":[66,188,760,58]}
+{"kind":"shape","slide":10,"role":"metric successful case types","bbox":[64,276,120,102]}
+{"kind":"shape","slide":10,"role":"metric accent successful case types","bbox":[64,276,120,6]}
+{"kind":"shape","slide":10,"role":"metric value successful case types","bbox":[82,296,84,44]}
+{"kind":"textbox","slide":10,"role":"metric value successful case types","text":"4","bbox":[82,296,84,44]}
+{"kind":"shape","slide":10,"role":"metric label successful case types","bbox":[82,350,84,30]}
+{"kind":"textbox","slide":10,"role":"metric label successful case types","text":"successful case types","bbox":[82,350,84,30]}
+{"kind":"shape","slide":10,"role":"metric evidence hits in strong cases","bbox":[196,276,120,102]}
+{"kind":"shape","slide":10,"role":"metric accent evidence hits in strong cases","bbox":[196,276,120,6]}
+{"kind":"shape","slide":10,"role":"metric value evidence hits in strong cases","bbox":[214,296,84,44]}
+{"kind":"textbox","slide":10,"role":"metric value evidence hits in strong cases","text":"3","bbox":[214,296,84,44]}
+{"kind":"shape","slide":10,"role":"metric label evidence hits in strong cases","bbox":[214,350,84,30]}
+{"kind":"textbox","slide":10,"role":"metric label evidence hits in strong cases","text":"evidence hits in strong cases","bbox":[214,350,84,30]}
+{"kind":"shape","slide":10,"role":"metric hate case flagged","bbox":[328,276,120,102]}
+{"kind":"shape","slide":10,"role":"metric accent hate case flagged","bbox":[328,276,120,6]}
+{"kind":"shape","slide":10,"role":"metric value hate case flagged","bbox":[346,296,84,44]}
+{"kind":"textbox","slide":10,"role":"metric value hate case flagged","text":"1","bbox":[346,296,84,44]}
+{"kind":"shape","slide":10,"role":"metric label hate case flagged","bbox":[346,350,84,30]}
+{"kind":"textbox","slide":10,"role":"metric label hate case flagged","text":"hate case flagged","bbox":[346,350,84,30]}
+{"kind":"shape","slide":10,"role":"metric invalid input blocked","bbox":[460,276,120,102]}
+{"kind":"shape","slide":10,"role":"metric accent invalid input blocked","bbox":[460,276,120,6]}
+{"kind":"shape","slide":10,"role":"metric value invalid input blocked","bbox":[478,296,84,44]}
+{"kind":"textbox","slide":10,"role":"metric value invalid input blocked","text":"1","bbox":[478,296,84,44]}
+{"kind":"shape","slide":10,"role":"metric label invalid input blocked","bbox":[478,350,84,30]}
+{"kind":"textbox","slide":10,"role":"metric label invalid input blocked","text":"invalid input blocked","bbox":[478,350,84,30]}
+{"kind":"shape","slide":10,"role":"chart panel","bbox":[64,410,520,212]}
+{"kind":"shape","slide":10,"role":"label RESULTS SNAPSHOT","bbox":[88,434,220,16]}
+{"kind":"textbox","slide":10,"role":"label RESULTS SNAPSHOT","text":"RESULTS SNAPSHOT","bbox":[88,434,220,16]}
+{"kind":"shape","slide":10,"role":"table panel","bbox":[618,360,580,262]}
+{"kind":"shape","slide":10,"role":"table header Scenario","bbox":[636,388,90,18]}
+{"kind":"textbox","slide":10,"role":"table header Scenario","text":"Scenario","bbox":[636,388,90,18]}
+{"kind":"shape","slide":10,"role":"table header Verdict","bbox":[878,388,90,18]}
+{"kind":"textbox","slide":10,"role":"table header Verdict","text":"Verdict","bbox":[878,388,90,18]}
+{"kind":"shape","slide":10,"role":"table header Veracity","bbox":[980,388,90,18]}
+{"kind":"textbox","slide":10,"role":"table header Veracity","text":"Veracity","bbox":[980,388,90,18]}
+{"kind":"shape","slide":10,"role":"table header Evidence","bbox":[1084,388,90,18]}
+{"kind":"textbox","slide":10,"role":"table header Evidence","text":"Evidence","bbox":[1084,388,90,18]}
+{"kind":"shape","slide":10,"role":"table rule 0","bbox":[632,416,544,1]}
+{"kind":"shape","slide":10,"role":"scenario 0","bbox":[636,426,220,18]}
+{"kind":"textbox","slide":10,"role":"scenario 0","text":"Factual claim","bbox":[636,426,220,18]}
+{"kind":"shape","slide":10,"role":"verdict 0","bbox":[878,426,90,18]}
+{"kind":"textbox","slide":10,"role":"verdict 0","text":"Supports","bbox":[878,426,90,18]}
+{"kind":"shape","slide":10,"role":"veracity 0","bbox":[980,426,90,18]}
+{"kind":"textbox","slide":10,"role":"veracity 0","text":"real","bbox":[980,426,90,18]}
+{"kind":"shape","slide":10,"role":"evidence 0","bbox":[1084,426,60,18]}
+{"kind":"textbox","slide":10,"role":"evidence 0","text":"3","bbox":[1084,426,60,18]}
+{"kind":"shape","slide":10,"role":"table rule 1","bbox":[632,464,544,1]}
+{"kind":"shape","slide":10,"role":"scenario 1","bbox":[636,474,220,18]}
+{"kind":"textbox","slide":10,"role":"scenario 1","text":"Political misinformation","bbox":[636,474,220,18]}
+{"kind":"shape","slide":10,"role":"verdict 1","bbox":[878,474,90,18]}
+{"kind":"textbox","slide":10,"role":"verdict 1","text":"Refutes","bbox":[878,474,90,18]}
+{"kind":"shape","slide":10,"role":"veracity 1","bbox":[980,474,90,18]}
+{"kind":"textbox","slide":10,"role":"veracity 1","text":"fake","bbox":[980,474,90,18]}
+{"kind":"shape","slide":10,"role":"evidence 1","bbox":[1084,474,60,18]}
+{"kind":"textbox","slide":10,"role":"evidence 1","text":"3","bbox":[1084,474,60,18]}
+{"kind":"shape","slide":10,"role":"table rule 2","bbox":[632,512,544,1]}
+{"kind":"shape","slide":10,"role":"scenario 2","bbox":[636,522,220,18]}
+{"kind":"textbox","slide":10,"role":"scenario 2","text":"Toxic post","bbox":[636,522,220,18]}
+{"kind":"shape","slide":10,"role":"verdict 2","bbox":[878,522,90,18]}
+{"kind":"textbox","slide":10,"role":"verdict 2","text":"Refutes","bbox":[878,522,90,18]}
+{"kind":"shape","slide":10,"role":"veracity 2","bbox":[980,522,90,18]}
+{"kind":"textbox","slide":10,"role":"veracity 2","text":"misleading","bbox":[980,522,90,18]}
+{"kind":"shape","slide":10,"role":"evidence 2","bbox":[1084,522,60,18]}
+{"kind":"textbox","slide":10,"role":"evidence 2","text":"3","bbox":[1084,522,60,18]}
+{"kind":"shape","slide":10,"role":"table rule 3","bbox":[632,560,544,1]}
+{"kind":"shape","slide":10,"role":"scenario 3","bbox":[636,570,220,18]}
+{"kind":"textbox","slide":10,"role":"scenario 3","text":"Tiny invalid input","bbox":[636,570,220,18]}
+{"kind":"shape","slide":10,"role":"verdict 3","bbox":[878,570,90,18]}
+{"kind":"textbox","slide":10,"role":"verdict 3","text":"Rejected","bbox":[878,570,90,18]}
+{"kind":"shape","slide":10,"role":"veracity 3","bbox":[980,570,90,18]}
+{"kind":"textbox","slide":10,"role":"veracity 3","text":"400","bbox":[980,570,90,18]}
+{"kind":"shape","slide":10,"role":"evidence 3","bbox":[1084,570,60,18]}
+{"kind":"textbox","slide":10,"role":"evidence 3","text":"0","bbox":[1084,570,60,18]}
+{"kind":"shape","slide":10,"role":"footer left","bbox":[64,683,780,16]}
+{"kind":"textbox","slide":10,"role":"footer left","text":"These results are why tomorrow's demo should stay inside rehearsal-tested claims.","bbox":[64,683,780,16]}
+{"kind":"shape","slide":10,"role":"footer right","bbox":[940,683,270,16]}
+{"kind":"textbox","slide":10,"role":"footer right","text":"Scenario testing","bbox":[940,683,270,16]}
+{"kind":"shape","slide":11,"role":"background","bbox":[0,0,1280,720]}
+{"kind":"shape","slide":11,"role":"top strip","bbox":[0,0,1280,106]}
+{"kind":"shape","slide":11,"role":"glow right","bbox":[948,-132,410,410]}
+{"kind":"shape","slide":11,"role":"glow left","bbox":[-118,472,360,360]}
+{"kind":"shape","slide":11,"role":"footer band","bbox":[0,670,1280,50]}
+{"kind":"shape","slide":11,"role":"section","bbox":[64,38,220,20]}
+{"kind":"textbox","slide":11,"role":"section","text":"LIMITS & FUTURE WORK","bbox":[64,38,220,20]}
+{"kind":"shape","slide":11,"role":"page","bbox":[1090,38,120,20]}
+{"kind":"textbox","slide":11,"role":"page","text":"11 / 12","bbox":[1090,38,120,20]}
+{"kind":"shape","slide":11,"role":"header rule","bbox":[64,64,1152,2]}
+{"kind":"shape","slide":11,"role":"title","bbox":[64,88,760,104]}
+{"kind":"textbox","slide":11,"role":"title","text":"Current limitations and next improvements","bbox":[64,88,760,104]}
+{"kind":"shape","slide":11,"role":"subtitle","bbox":[66,188,760,58]}
+{"kind":"textbox","slide":11,"role":"subtitle","text":"A credible system presentation should acknowledge what is working now and what still deserves improvement.","bbox":[66,188,760,58]}
+{"kind":"shape","slide":11,"role":"card Current limitations","bbox":[64,284,356,236]}
+{"kind":"shape","slide":11,"role":"card accent Current limitations","bbox":[64,284,6,236]}
+{"kind":"shape","slide":11,"role":"card title Current limitations","bbox":[86,302,312,24]}
+{"kind":"textbox","slide":11,"role":"card title Current limitations","text":"Current limitations","bbox":[86,302,312,24]}
+{"kind":"shape","slide":11,"role":"card body Current limitations","bbox":[86,336,312,166]}
+{"kind":"textbox","slide":11,"role":"card body Current limitations","text":"1. Vague claims can still receive strong verdicts.\n2. The strongest demo path is still text-first.\n3. Wider multimodal validation is still limited.\n4. Some judgments still depend on retrieval quality.","bbox":[86,336,312,166]}
+{"kind":"shape","slide":11,"role":"card Near-term improvements","bbox":[462,284,356,236]}
+{"kind":"shape","slide":11,"role":"card accent Near-term improvements","bbox":[462,284,6,236]}
+{"kind":"shape","slide":11,"role":"card title Near-term improvements","bbox":[484,302,312,24]}
+{"kind":"textbox","slide":11,"role":"card title Near-term improvements","text":"Near-term improvements","bbox":[484,302,312,24]}
+{"kind":"shape","slide":11,"role":"card body Near-term improvements","bbox":[484,336,312,166]}
+{"kind":"textbox","slide":11,"role":"card body Near-term improvements","text":"1. Better uncertainty handling for weak inputs.\n2. More image and video demo validation.\n3. Richer reviewer audit trail.\n4. Expanded evidence-source diversity.","bbox":[484,336,312,166]}
+{"kind":"shape","slide":11,"role":"card Why the project is still strong","bbox":[860,284,356,236]}
+{"kind":"shape","slide":11,"role":"card accent Why the project is still strong","bbox":[860,284,6,236]}
+{"kind":"shape","slide":11,"role":"card title Why the project is still strong","bbox":[882,302,312,24]}
+{"kind":"textbox","slide":11,"role":"card title Why the project is still strong","text":"Why the project is still strong","bbox":[882,302,312,24]}
+{"kind":"shape","slide":11,"role":"card body Why the project is still strong","bbox":[882,336,312,166]}
+{"kind":"textbox","slide":11,"role":"card body Why the project is still strong","text":"The system already connects ML, retrieval, explainability, persistence, and product workflow in one coherent implementation.","bbox":[882,336,312,166]}
+{"kind":"shape","slide":11,"role":"future strip","bbox":[64,556,1152,72]}
+{"kind":"shape","slide":11,"role":"future strip text","bbox":[92,582,1080,20]}
+{"kind":"textbox","slide":11,"role":"future strip text","text":"Good presentation framing: this project solves the integrated verification workflow problem and creates a solid base for deeper multimodal and uncertainty-aware research.","bbox":[92,582,1080,20]}
+{"kind":"shape","slide":11,"role":"footer left","bbox":[64,683,780,16]}
+{"kind":"textbox","slide":11,"role":"footer left","text":"Faculty usually appreciate a strong limitations slide.","bbox":[64,683,780,16]}
+{"kind":"shape","slide":11,"role":"footer right","bbox":[940,683,270,16]}
+{"kind":"textbox","slide":11,"role":"footer right","text":"Roadmap","bbox":[940,683,270,16]}
+{"kind":"shape","slide":12,"role":"background","bbox":[0,0,1280,720]}
+{"kind":"shape","slide":12,"role":"top strip","bbox":[0,0,1280,106]}
+{"kind":"shape","slide":12,"role":"glow right","bbox":[948,-132,410,410]}
+{"kind":"shape","slide":12,"role":"glow left","bbox":[-118,472,360,360]}
+{"kind":"shape","slide":12,"role":"footer band","bbox":[0,670,1280,50]}
+{"kind":"shape","slide":12,"role":"section","bbox":[64,38,220,20]}
+{"kind":"textbox","slide":12,"role":"section","text":"CONCLUSION","bbox":[64,38,220,20]}
+{"kind":"shape","slide":12,"role":"page","bbox":[1090,38,120,20]}
+{"kind":"textbox","slide":12,"role":"page","text":"12 / 12","bbox":[1090,38,120,20]}
+{"kind":"shape","slide":12,"role":"header rule","bbox":[64,64,1152,2]}
+{"kind":"shape","slide":12,"role":"title","bbox":[64,88,760,104]}
+{"kind":"textbox","slide":12,"role":"title","text":"FactShield in one sentence","bbox":[64,88,760,104]}
+{"kind":"shape","slide":12,"role":"subtitle","bbox":[66,188,760,58]}
+{"kind":"textbox","slide":12,"role":"subtitle","text":"FactShield is an explainable misinformation-verification platform that connects technical analysis to real analyst workflow.","bbox":[66,188,760,58]}
+{"kind":"shape","slide":12,"role":"card Problem addressed","bbox":[64,292,340,200]}
+{"kind":"shape","slide":12,"role":"card accent Problem addressed","bbox":[64,292,6,200]}
+{"kind":"shape","slide":12,"role":"card title Problem addressed","bbox":[86,310,296,24]}
+{"kind":"textbox","slide":12,"role":"card title Problem addressed","text":"Problem addressed","bbox":[86,310,296,24]}
+{"kind":"shape","slide":12,"role":"card body Problem addressed","bbox":[86,344,296,130]}
+{"kind":"textbox","slide":12,"role":"card body Problem addressed","text":"Slow, fragmented, and weakly explainable verification workflows.","bbox":[86,344,296,130]}
+{"kind":"shape","slide":12,"role":"card System contribution","bbox":[470,292,340,200]}
+{"kind":"shape","slide":12,"role":"card accent System contribution","bbox":[470,292,6,200]}
+{"kind":"shape","slide":12,"role":"card title System contribution","bbox":[492,310,296,24]}
+{"kind":"textbox","slide":12,"role":"card title System contribution","text":"System contribution","bbox":[492,310,296,24]}
+{"kind":"shape","slide":12,"role":"card body System contribution","bbox":[492,344,296,130]}
+{"kind":"textbox","slide":12,"role":"card body System contribution","text":"A pipeline that classifies, retrieves, reasons, explains, and operationalizes results.","bbox":[492,344,296,130]}
+{"kind":"shape","slide":12,"role":"card Product contribution","bbox":[876,292,340,200]}
+{"kind":"shape","slide":12,"role":"card accent Product contribution","bbox":[876,292,6,200]}
+{"kind":"shape","slide":12,"role":"card title Product contribution","bbox":[898,310,296,24]}
+{"kind":"textbox","slide":12,"role":"card title Product contribution","text":"Product contribution","bbox":[898,310,296,24]}
+{"kind":"shape","slide":12,"role":"card body Product contribution","bbox":[898,344,296,130]}
+{"kind":"textbox","slide":12,"role":"card body Product contribution","text":"A SaaS interface with reports, assignments, settings, and export built on live backend data.","bbox":[898,344,296,130]}
+{"kind":"shape","slide":12,"role":"closing strip","bbox":[64,536,1152,82]}
+{"kind":"shape","slide":12,"role":"closing line","bbox":[92,566,900,22]}
+{"kind":"textbox","slide":12,"role":"closing line","text":"Thank you. The next step in the presentation is the live walkthrough using the tested claim sequence.","bbox":[92,566,900,22]}
+{"kind":"shape","slide":12,"role":"questions","bbox":[1060,558,110,30]}
+{"kind":"textbox","slide":12,"role":"questions","text":"Questions","bbox":[1060,558,110,30]}
+{"kind":"shape","slide":12,"role":"footer left","bbox":[64,683,780,16]}
+{"kind":"textbox","slide":12,"role":"footer left","text":"End here before switching to the live product demo.","bbox":[64,683,780,16]}
+{"kind":"shape","slide":12,"role":"footer right","bbox":[940,683,270,16]}
+{"kind":"textbox","slide":12,"role":"footer right","text":"Presentation close","bbox":[940,683,270,16]}

@@ -128,34 +128,36 @@ export function CommandCenter({ initialQuery = "", autoSubmitSignal = 0 }: Comma
             className="min-h-[220px] resize-none rounded-xl border-cyan-300/20 bg-black/20 p-5 text-base leading-relaxed text-slate-900 placeholder:text-cyan-100/35 focus-visible:ring-primary"
           />
 
-          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="mt-5 space-y-3">
             <input type="file" ref={imgRef} className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], "image")} />
             <input type="file" ref={vidRef} className="hidden" accept="video/*" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], "video")} />
 
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => imgRef.current?.click()}
-              className="h-11 rounded-lg border-cyan-300/20 bg-cyan-300/10 text-slate-700 hover:bg-cyan-300/15"
-            >
-              <ImageIcon className="h-4 w-4 text-primary" />
-              Image
-            </Button>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => imgRef.current?.click()}
+                className="h-11 w-full rounded-lg border-cyan-300/20 bg-cyan-300/10 text-slate-700 hover:bg-cyan-300/15"
+              >
+                <ImageIcon className="h-4 w-4 text-primary" />
+                Image
+              </Button>
 
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => vidRef.current?.click()}
-              className="h-11 rounded-lg border-cyan-300/20 bg-cyan-300/10 text-slate-700 hover:bg-cyan-300/15"
-            >
-              <Video className="h-4 w-4 text-primary" />
-              Video
-            </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => vidRef.current?.click()}
+                className="h-11 w-full rounded-lg border-cyan-300/20 bg-cyan-300/10 text-slate-700 hover:bg-cyan-300/15"
+              >
+                <Video className="h-4 w-4 text-primary" />
+                Video
+              </Button>
+            </div>
 
             <Button
               disabled={loading || !query.trim()}
               onClick={() => void handleTextSubmit()}
-              className="h-11 rounded-lg bg-primary px-6 font-semibold text-slate-950 shadow-[0_0_28px_rgba(34,211,238,0.28)] hover:bg-primary/90 sm:ml-auto"
+              className="h-11 w-full rounded-lg bg-primary px-6 font-semibold text-slate-950 shadow-[0_0_28px_rgba(34,211,238,0.28)] hover:bg-primary/90"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4 fill-white" />}
               Analyze

@@ -4,6 +4,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 6000,
 });
 
 export interface FeedItem {
@@ -64,6 +65,97 @@ export interface RetrievalHealth {
   index_consistent: boolean;
   metadata_count: number;
   vector_count: number;
+}
+
+export interface InvestigationRecord {
+  id: string;
+  title: string;
+  status: string;
+  updated_at: string;
+  verdict: string;
+  veracity: string;
+  confidence: number | null;
+  evidence_count: number;
+  source_mode: string;
+  summary: string;
+  assignee_id?: string | null;
+  assignee_name?: string | null;
+}
+
+export interface ReportRecord {
+  id: string;
+  title: string;
+  status: string;
+  owner: string;
+  updated_at: string;
+  verdict: string;
+  confidence: number | null;
+  evidence_count: number;
+  summary: string;
+  audience: string;
+  highlights: string[];
+  last_exported_at?: string | null;
+  approval_status?: string;
+  reviewer_notes?: string;
+  reviewer_name?: string;
+  approved_at?: string | null;
+}
+
+export interface ReportDetail extends ReportRecord {
+  result: VerificationResult;
+}
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  status: string;
+  contact: string;
+  focus: string;
+  queue: number;
+  assigned_investigations: InvestigationRecord[];
+}
+
+export interface TeamWorkspace {
+  summary: {
+    analysts_online: number;
+    cases_awaiting_approval: number;
+    assignment_flow: string;
+  };
+  members: TeamMember[];
+  investigations: InvestigationRecord[];
+  unassigned_investigations: InvestigationRecord[];
+  policy: {
+    title: string;
+    detail: string;
+  };
+}
+
+export interface SettingControl {
+  id: string;
+  title: string;
+  detail: string;
+  value: string;
+  status: string;
+}
+
+export interface SettingsWorkspace {
+  summary: {
+    control_sets: number;
+    alert_routes: number;
+    runtime_profile: string;
+  };
+  controls: SettingControl[];
+  plan: {
+    name: string;
+    features: string[];
+  };
+  environment: {
+    region: string;
+    mode: string;
+    audit_trail: string;
+    retrieval: string;
+  };
 }
 
 export interface XaiAttribution {
@@ -206,5 +298,62 @@ export const getSystemStatus = async (): Promise<SystemStatus> => {
 
 export const getRetrievalHealth = async (): Promise<RetrievalHealth> => {
   const response = await api.get<RetrievalHealth>('/retrieval-health');
+  return response.data;
+};
+
+export const getInvestigations = async (): Promise<InvestigationRecord[]> => {
+  const response = await api.get<InvestigationRecord[]>('/investigations');
+  return response.data;
+};
+
+export const getReports = async (): Promise<ReportRecord[]> => {
+  const response = await api.get<ReportRecord[]>('/reports');
+  return response.data;
+};
+
+export const getReportDetail = async (reportId: string): Promise<ReportDetail> => {
+  const response = await api.get<ReportDetail>(`/reports/${reportId}`);
+  return response.data;
+};
+
+export const updateReportMetadata = async (
+  reportId: string,
+  payload: { title?: string; owner?: string; audience?: string; approval_status?: string; reviewer_notes?: string; reviewer_name?: string }
+): Promise<ReportDetail> => {
+  const response = await api.put<ReportDetail>(`/reports/${reportId}/metadata`, payload);
+  return response.data;
+};
+
+export const downloadReport = async (reportId: string) => {
+  const response = await api.get(`/reports/${reportId}/export`, { responseType: "blob" });
+  return response.data;
+};
+
+export const getTeamWorkspace = async (): Promise<TeamWorkspace> => {
+  const response = await api.get<TeamWorkspace>('/workspace/team');
+  return response.data;
+};
+
+export const assignInvestigation = async (
+  investigationId: string,
+  memberId: string | null
+): Promise<TeamWorkspace> => {
+  const response = await api.post<TeamWorkspace>('/workspace/team/assign', {
+    investigation_id: investigationId,
+    member_id: memberId,
+  });
+  return response.data;
+};
+
+export const getSettingsWorkspace = async (): Promise<SettingsWorkspace> => {
+  const response = await api.get<SettingsWorkspace>('/workspace/settings');
+  return response.data;
+};
+
+export const updateWorkspaceSetting = async (
+  settingId: string,
+  payload: { value?: string; status?: string; detail?: string }
+): Promise<SettingControl> => {
+  const response = await api.put<SettingControl>(`/workspace/settings/${settingId}`, payload);
   return response.data;
 };

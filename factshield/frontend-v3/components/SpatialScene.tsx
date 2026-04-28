@@ -109,10 +109,13 @@ export function SpatialScene() {
     scene.add(grid);
 
     let frameId = 0;
-    const clock = new THREE.Clock();
+    const timer = new THREE.Timer();
+    timer.connect(document);
+    timer.reset();
 
-    const animate = () => {
-      const elapsed = clock.getElapsedTime();
+    const animate = (timestamp?: number) => {
+      timer.update(timestamp);
+      const elapsed = timer.getElapsed();
       group.rotation.y = Math.sin(elapsed * 0.18) * 0.08;
       shield.rotation.x = elapsed * 0.18;
       shield.rotation.y = elapsed * 0.24;
@@ -139,6 +142,7 @@ export function SpatialScene() {
       cancelAnimationFrame(frameId);
       window.removeEventListener("resize", resize);
       mount.removeChild(renderer.domElement);
+      timer.dispose();
       scene.traverse((object) => {
         if (object instanceof THREE.Mesh || object instanceof THREE.Points || object instanceof THREE.Line) {
           object.geometry.dispose();

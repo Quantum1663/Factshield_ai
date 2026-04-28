@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Sidebar } from "@/components/Sidebar";
 import { SpatialScene } from "@/components/SpatialScene";
+import { WorkspaceHeader } from "@/components/WorkspaceHeader";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -21,6 +22,7 @@ export default function RootLayout({
         <Sidebar />
         <main className="min-w-0 flex-1 px-4 pb-12 pt-20 sm:px-6 lg:px-10 lg:py-8">
           <div className="mx-auto max-w-[1440px]">
+            <WorkspaceHeader />
             {children}
           </div>
         </main>

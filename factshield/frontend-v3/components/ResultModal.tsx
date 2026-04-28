@@ -6,7 +6,7 @@ import { EvidenceGraph } from "@/components/EvidenceGraph";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VerificationResult } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { AlertTriangle, Database, Fingerprint, Gavel, Network, ScanSearch, ShieldAlert, ShieldCheck, X } from "lucide-react";
+import { AlertTriangle, Database, ExternalLink, Fingerprint, Gavel, Network, ScanSearch, ShieldAlert, ShieldCheck, X } from "lucide-react";
 
 interface Props {
   result: VerificationResult | null;
@@ -86,6 +86,14 @@ function StatTile({ label, value }: { label: string; value: string }) {
       <div className="mt-1 text-lg font-semibold text-slate-950">{value}</div>
     </div>
   );
+}
+
+function parseEvidence(entry: string) {
+  const match = entry.match(/^\[(.*?)\s*\|\s*Date:\s*(.*?)\]\s*([\s\S]*)$/);
+  if (!match) {
+    return { source: "retrieval", date: "unknown", body: entry };
+  }
+  return { source: match[1] || "retrieval", date: match[2] || "unknown", body: match[3] || entry };
 }
 
 export function ResultModal({ result, onClose }: Props) {
@@ -261,12 +269,31 @@ export function ResultModal({ result, onClose }: Props) {
               <TabsContent value="evidence" className="mt-0 outline-none">
                 <Panel title="Retrieved Evidence" icon={Database}>
                   <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                    {result.evidence.length ? result.evidence.map((entry, index) => (
-                      <div key={index} className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
-                        <div className="mb-2 font-mono text-xs font-semibold text-primary">E{index + 1}</div>
-                        {entry}
-                      </div>
-                    )) : (
+                    {result.evidence.length ? result.evidence.map((entry, index) => {
+                      const evidence = parseEvidence(entry);
+                      const citation = result.evidence_citations.find((item) => item.index === index);
+                      return (
+                        <article key={index} className="rounded-xl border border-cyan-300/15 bg-black/20 p-4">
+                          <div className="mb-4 flex items-start justify-between gap-3">
+                            <div>
+                              <div className="font-mono text-xs font-semibold text-primary">E{index + 1}</div>
+                              <div className="mt-1 text-xs font-semibold uppercase tracking-widest text-slate-500">{evidence.source}</div>
+                            </div>
+                            <div className="rounded-md border border-cyan-300/15 bg-cyan-300/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-cyan-100">
+                              {citation?.relation || "mentions"}
+                            </div>
+                          </div>
+                          <p className="line-clamp-6 text-sm leading-6 text-slate-600">{evidence.body}</p>
+                          <div className="mt-4 flex items-center justify-between border-t border-cyan-300/15 pt-3">
+                            <span className="text-xs text-slate-500">{evidence.date}</span>
+                            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary">
+                              <ExternalLink className="h-3.5 w-3.5" />
+                              Source card
+                            </span>
+                          </div>
+                        </article>
+                      );
+                    }) : (
                       <div className="col-span-full rounded-lg border border-dashed border-slate-200 bg-slate-50 p-10 text-center text-sm text-slate-500">
                         No retrieval evidence was returned for this task. If the system reports degraded retrieval, rebuild the vector database and rerun the claim.
                       </div>
